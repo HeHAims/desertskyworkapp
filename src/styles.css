@@ -242,9 +242,9 @@ button {
   margin-top: 18px;
 }
 
-.group-row,
-.today-heading {
-  display: flex;
+.group-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 14px;
   width: 100%;
@@ -258,22 +258,50 @@ button {
   font-size: 22px;
 }
 
-.group-row svg,
-.today-heading svg {
+.group-row svg {
   color: #aaa;
 }
 
-.today-group {
+.group-row span {
+  display: grid;
+  min-width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef3f7;
+  color: #52616d;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.job-section {
   border: 1px solid #ddd;
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
 }
 
-.today-heading {
+.job-section .group-row {
   border: 0;
-  border-bottom: 1px solid #ddd;
   border-radius: 0;
+}
+
+.job-section.open .group-row {
+  border-bottom: 1px solid #ddd;
+}
+
+.job-section.open .group-row svg {
+  color: #328fd0;
+}
+
+.section-jobs {
+  padding: 1px 0;
+}
+
+.section-jobs p {
+  margin: 0;
+  padding: 14px;
+  color: #64707d;
 }
 
 .job-row {
@@ -371,6 +399,11 @@ button {
 .status.completed {
   background: #d8f7e7;
   color: #047857;
+}
+
+.status.scheduled {
+  background: #e0ecff;
+  color: #1d4ed8;
 }
 
 .tabs,
@@ -532,6 +565,57 @@ button {
   font-weight: 900;
 }
 
+.feature-panel {
+  grid-column: 1 / -1;
+}
+
+.feature-heading h3 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.feature-card {
+  border: 1px solid #e2e7ed;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+}
+
+.feature-card h4 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+}
+
+.feature-card p {
+  margin: 8px 0 14px;
+  color: #5d6670;
+  line-height: 1.45;
+}
+
+.feature-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.feature-card span {
+  border: 1px solid #dce8ef;
+  border-radius: 999px;
+  background: #f7fcff;
+  color: #15364a;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .mobile-tabs {
   display: none;
 }
@@ -668,8 +752,7 @@ button {
     grid-row: auto;
   }
 
-  .group-row,
-  .today-heading {
+  .group-row {
     font-size: 20px;
   }
 
@@ -687,6 +770,10 @@ button {
 
   .side-card {
     display: none;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
   }
 
   .mobile-tabs {

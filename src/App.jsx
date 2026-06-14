@@ -14,8 +14,7 @@ import {
   PenLine,
   Search,
   Send,
-  ShieldCheck,
-  UserRound
+  ShieldCheck
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -33,7 +32,8 @@ const initialJobs = [
     status: 'Needs approval',
     material: 'Charcoal vinyl low',
     activity: 'Fabric approval and booth install',
-    alert: 'Owner approval needed'
+    alert: 'Owner approval needed',
+    period: 'today'
   },
   {
     id: 'DSV-1043',
@@ -48,7 +48,8 @@ const initialJobs = [
     status: 'In production',
     material: 'Supplies ready',
     activity: 'Frame repair and fabric prep',
-    alert: 'Technician working'
+    alert: 'Technician working',
+    period: 'today'
   },
   {
     id: 'DSV-1044',
@@ -63,12 +64,120 @@ const initialJobs = [
     status: 'Blocked',
     material: 'Webbing missing',
     activity: 'Waiting on webbing before upholstery',
-    alert: 'Inventory shortage'
+    alert: 'Inventory shortage',
+    period: 'today'
+  },
+  {
+    id: 'DSV-1038',
+    code: '09398 / 2075-1',
+    number: '126801',
+    account: 'The Mirage Villas',
+    type: 'Repair',
+    due: '06/03/2026',
+    duration: '3 hrs',
+    salesperson: 'Ana',
+    customer: 'Lobby chair repair',
+    status: 'Completed',
+    material: 'Brown vinyl used',
+    activity: 'Completed with photos and customer sign-off',
+    alert: 'Completion email sent',
+    period: 'past'
+  },
+  {
+    id: 'DSV-1039',
+    code: '09402 / 1120-7',
+    number: '126812',
+    account: 'Local Restaurant',
+    type: 'Upholstery',
+    due: '06/04/2026',
+    duration: '1.5 hrs',
+    salesperson: 'Luis',
+    customer: 'Dining booth touch-up',
+    status: 'Completed',
+    material: 'Black thread used',
+    activity: 'Before and after photos captured',
+    alert: 'Yesterday job archived',
+    period: 'past'
+  },
+  {
+    id: 'DSV-1048',
+    code: '09440 / 5010-9',
+    number: '126910',
+    account: 'Boutique Hotel',
+    type: 'Install',
+    due: '06/08/2026',
+    duration: '5 hrs',
+    salesperson: 'Maria',
+    customer: 'Suite headboard install',
+    status: 'Scheduled',
+    material: 'Cream fabric reserved',
+    activity: 'Daily email notification scheduled',
+    alert: 'Tomorrow route ready',
+    period: 'future'
+  },
+  {
+    id: 'DSV-1050',
+    code: '09444 / 7090-3',
+    number: '126924',
+    account: 'Private Client',
+    type: 'Custom furniture',
+    due: '06/12/2026',
+    duration: 'unknown',
+    salesperson: 'Ana',
+    customer: 'Custom ottoman build',
+    status: 'Scheduled',
+    material: 'Waiting fabric selection',
+    activity: 'Measurements and drawings attached',
+    alert: 'Future job queued',
+    period: 'future'
   }
 ];
 
 const forms = ['Pickup condition report', 'Fabric approval form', 'Delivery sign-off', 'Repair notes'];
 const inventory = ['18 yd Charcoal vinyl', '1 roll Webbing left', '6 spools Black thread'];
+const jobSections = [
+  { id: 'past', label: 'Trabajos pasados', empty: 'No past jobs ready' },
+  { id: 'today', label: 'Trabajos de hoy', empty: 'No jobs for today' },
+  { id: 'future', label: 'Trabajos futuros', empty: 'No future jobs scheduled' }
+];
+const featureGroups = [
+  {
+    title: 'Field Service',
+    intro: 'Installers get job details, instructions, photos, maps, and sign-offs in one mobile-friendly workflow.',
+    items: [
+      'Special instructions and documentation',
+      'Before and after photos',
+      'Mobile customer sign-offs',
+      'Daily email notifications',
+      'Customer info and location maps',
+      'Instant job completion view'
+    ]
+  },
+  {
+    title: 'Ping Automation',
+    intro: 'Customer and owner communication is handled from job activity instead of manual follow-up calls.',
+    items: [
+      'Automated appointment reminders',
+      'Customer on-the-way texts',
+      'Follow-up messages',
+      'Company-branded communications',
+      'Easy confirm or reschedule',
+      'Activity status updates'
+    ]
+  },
+  {
+    title: 'Log Visibility',
+    intro: 'Every important change becomes a clean activity feed so the owner and shop know what happened.',
+    items: [
+      'Real-time activity feed',
+      'Instant issue alerts',
+      'Email alerts to the right people',
+      'Sales and manager visibility',
+      'Shop-wide status awareness',
+      'Designed around service workflows'
+    ]
+  }
+];
 
 function AppButton({ children, tone = 'dark', onClick }) {
   return (
@@ -85,8 +194,27 @@ export default function App() {
   const [role, setRole] = useState('Owner');
   const [notice, setNotice] = useState('Ready for demo');
   const [notesOpen, setNotesOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('today');
 
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedId) ?? jobs[0], [jobs, selectedId]);
+  const visibleJobs = useMemo(() => jobs.filter((job) => job.period === activeSection), [jobs, activeSection]);
+
+  function openJob(job) {
+    setSelectedId(job.id);
+    setActiveSection(job.period);
+    setTab('job');
+    setNotice(`Opened ${job.code}: ${job.customer}`);
+  }
+
+  function openSection(sectionId) {
+    const nextJob = jobs.find((job) => job.period === sectionId);
+    setActiveSection(sectionId);
+    if (nextJob) {
+      setSelectedId(nextJob.id);
+      setTab('job');
+      setNotice(`Showing ${jobSections.find((section) => section.id === sectionId)?.label}`);
+    }
+  }
 
   function markComplete() {
     setJobs((current) =>
@@ -162,43 +290,37 @@ export default function App() {
             </div>
 
             <div className="job-groups">
-              {['Trabajos pasados', 'Trabajos de ayer'].map((label) => (
-                <button key={label} className="group-row" type="button">
-                  <CirclePlus size={24} />
-                  <strong>{label}</strong>
-                </button>
-              ))}
-
-              <div className="today-group">
-                <div className="today-heading">
-                  <CirclePlus size={24} />
-                  <strong>Trabajos de hoy</strong>
-                </div>
-                {jobs.map((job) => (
-                  <button
-                    key={job.id}
-                    type="button"
-                    className={`job-row ${selectedJob.id === job.id ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedId(job.id);
-                      setTab('job');
-                    }}
-                  >
-                    <div>
-                      <strong>{job.code}</strong>
-                      <span>{job.customer}</span>
-                    </div>
-                    <ChevronRight size={21} />
-                  </button>
-                ))}
-              </div>
-
-              {['Trabajos del ma\u00f1ana', 'Trabajos futuros'].map((label) => (
-                <button key={label} className="group-row" type="button">
-                  <CirclePlus size={24} />
-                  <strong>{label}</strong>
-                </button>
-              ))}
+              {jobSections.map((section) => {
+                const sectionJobs = jobs.filter((job) => job.period === section.id);
+                const open = activeSection === section.id;
+                return (
+                  <div key={section.id} className={`job-section ${open ? 'open' : ''}`}>
+                    <button className="group-row" type="button" onClick={() => openSection(section.id)}>
+                      <CirclePlus size={24} />
+                      <strong>{section.label}</strong>
+                      <span>{sectionJobs.length}</span>
+                    </button>
+                    {open ? (
+                      <div className="section-jobs">
+                        {visibleJobs.length ? visibleJobs.map((job) => (
+                          <button
+                            key={job.id}
+                            type="button"
+                            className={`job-row ${selectedJob.id === job.id ? 'selected' : ''}`}
+                            onClick={() => openJob(job)}
+                          >
+                            <div>
+                              <strong>{job.code}</strong>
+                              <span>{job.customer}</span>
+                            </div>
+                            <ChevronRight size={21} />
+                          </button>
+                        )) : <p>{section.empty}</p>}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -295,6 +417,26 @@ export default function App() {
             <div className="inventory-list">
               {inventory.map((item) => (
                 <span key={item}>{item}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel feature-panel">
+            <div className="feature-heading">
+              <span className="eyebrow">Included workflow tools</span>
+              <h3>Field, Ping, and Log features for the demo</h3>
+            </div>
+            <div className="feature-grid">
+              {featureGroups.map((group) => (
+                <article key={group.title} className="feature-card">
+                  <h4>{group.title}</h4>
+                  <p>{group.intro}</p>
+                  <div>
+                    {group.items.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </article>
               ))}
             </div>
           </div>
