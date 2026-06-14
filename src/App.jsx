@@ -1,32 +1,25 @@
 import {
-  ArrowLeft,
+  BellRing,
   CalendarDays,
   Camera,
   Check,
   ChevronRight,
-  CircleMinus,
   CirclePlus,
   ClipboardList,
   FilePlus,
   Home,
-  Menu,
+  MapPinned,
   MessageSquareText,
   PackageSearch,
   PenLine,
   Search,
-  Send
+  Send,
+  ShieldCheck,
+  UserRound
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-const jobGroups = [
-  { id: 'past', label: 'Trabajos pasados', count: 4, open: false },
-  { id: 'yesterday', label: 'Trabajos de ayer', count: 2, open: false },
-  { id: 'today', label: 'Trabajos de hoy', count: 3, open: true },
-  { id: 'tomorrow', label: 'Trabajos del ma\u00f1ana', count: 2, open: false },
-  { id: 'future', label: 'Trabajos futuros', count: 6, open: false }
-];
-
-const jobs = [
+const initialJobs = [
   {
     id: 'DSV-1042',
     code: '09424 / 3020-2',
@@ -35,12 +28,12 @@ const jobs = [
     type: 'Install',
     due: '06/05/2026',
     duration: 'unknown',
-    salesperson: '',
-    activity: 'Fabric approval and booth install',
-    status: 'Needs approval',
+    salesperson: 'Ana',
     customer: 'Hospitality booth set',
-    address: '3770 S Valley View Blvd, Las Vegas',
-    material: 'Charcoal vinyl low'
+    status: 'Needs approval',
+    material: 'Charcoal vinyl low',
+    activity: 'Fabric approval and booth install',
+    alert: 'Owner approval needed'
   },
   {
     id: 'DSV-1043',
@@ -51,255 +44,286 @@ const jobs = [
     due: '06/06/2026',
     duration: '2 hrs',
     salesperson: 'Maria',
-    activity: 'Antique chair frame repair',
-    status: 'In production',
     customer: 'Antique chair restoration',
-    address: 'Pickup required',
-    material: 'Supplies ready'
+    status: 'In production',
+    material: 'Supplies ready',
+    activity: 'Frame repair and fabric prep',
+    alert: 'Technician working'
+  },
+  {
+    id: 'DSV-1044',
+    code: '09431 / 1180-4',
+    number: '126874',
+    account: 'Desert Sky Custom',
+    type: 'Custom furniture',
+    due: '06/07/2026',
+    duration: '4 hrs',
+    salesperson: 'Luis',
+    customer: 'Custom banquette build',
+    status: 'Blocked',
+    material: 'Webbing missing',
+    activity: 'Waiting on webbing before upholstery',
+    alert: 'Inventory shortage'
   }
 ];
 
-const fieldRows = [
-  ['Salesperson', 'salesperson'],
-  ['Account', 'account'],
-  ['Nombre del trabajo', 'code'],
-  ['N\u00famero de trabajo', 'number'],
-  ['Tipo de trabajo', 'type']
-];
+const forms = ['Pickup condition report', 'Fabric approval form', 'Delivery sign-off', 'Repair notes'];
+const inventory = ['18 yd Charcoal vinyl', '1 roll Webbing left', '6 spools Black thread'];
 
-function TopChrome({ title, onBack, actionLabel, actionIcon = 'edit', onAction }) {
+function AppButton({ children, tone = 'dark', onClick }) {
   return (
-    <header className="phone-header">
-      <button type="button" className="dark-action" onClick={onBack}>
-        <ArrowLeft size={26} />
-        Regresar
-      </button>
-      <strong>{title}</strong>
-      <button type="button" className="dark-action" onClick={onAction}>
-        {actionIcon === 'check' ? <Check size={26} /> : <PenLine size={26} />}
-        {actionLabel}
-      </button>
-    </header>
-  );
-}
-
-function BottomTabs({ active, onChange }) {
-  return (
-    <nav className="bottom-tabs" aria-label="Job sections">
-      {[
-        ['job', 'Trabajo', ClipboardList],
-        ['photos', 'Fotos', Camera],
-        ['waiver', 'Renuncia', FilePlus]
-      ].map(([id, label, Icon]) => (
-        <button key={id} type="button" className={active === id ? 'active' : ''} onClick={() => onChange(id)}>
-          <Icon size={20} />
-          {label}
-        </button>
-      ))}
-    </nav>
-  );
-}
-
-function JobSearch({ onOpenJob }) {
-  return (
-    <section className="screen-body">
-      <label className="search-label">Job search</label>
-      <div className="search-box">
-        <Search size={28} />
-        <span>Enter Job Name...</span>
-      </div>
-
-      <div className="group-stack">
-        {jobGroups.map((group) => (
-          <article key={group.id} className={`job-group ${group.open ? 'open' : ''}`}>
-            <button type="button" className="group-heading">
-              {group.open ? <CircleMinus size={35} /> : <CirclePlus size={35} />}
-              <span>{group.label}</span>
-            </button>
-            {group.open ? (
-              <div className="group-content">
-                <div className="filter-box">
-                  <Search size={24} />
-                  <span>Filter items...</span>
-                </div>
-                {jobs.map((job) => (
-                  <button key={job.id} type="button" className="job-picker" onClick={() => onOpenJob(job)}>
-                    <div>
-                      <strong>{job.code}</strong>
-                      <span>{job.customer}</span>
-                    </div>
-                    <ChevronRight size={24} />
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
-
-      <div className="demo-logo">
-        <div className="logo-triangle">DS</div>
-        <strong>Desert Sky WorkApp</strong>
-      </div>
-    </section>
-  );
-}
-
-function JobDetail({ job, onNotes }) {
-  return (
-    <section className="screen-body detail-body">
-      {fieldRows.map(([label, key]) => (
-        <div key={key} className="form-row">
-          <label>{label}</label>
-          <div className="readonly-input">{job[key] || '\u00a0'}</div>
-        </div>
-      ))}
-
-      <div className="two-col">
-        <div className="form-row">
-          <label>Fecha de vencimiento</label>
-          <div className="readonly-input">{job.due}</div>
-        </div>
-        <div className="form-row">
-          <label>Duration</label>
-          <div className="readonly-input">{job.duration}</div>
-        </div>
-      </div>
-
-      <div className="form-row">
-        <label>Tiempo de actividad</label>
-        <div className="large-input">{job.activity}</div>
-      </div>
-
-      <div className="quick-actions">
-        <button type="button"><MessageSquareText size={22} /> Avisar due\u00f1o</button>
-        <button type="button"><PackageSearch size={22} /> Falta material</button>
-        <button type="button" onClick={onNotes}><Check size={22} /> Completar</button>
-      </div>
-    </section>
-  );
-}
-
-function PhotosView({ onNotes }) {
-  return (
-    <section className="screen-body photos-body">
-      <div className="blue-divider" />
-      <h2>Job Files</h2>
-      <button type="button" className="file-button">
-        <CirclePlus size={32} />
-        Archivos de WorkFlowOS
-      </button>
-      <div className="blue-divider" />
-      <h2>Job Photos</h2>
-      <label className="photo-label">Antes de</label>
-      <div className="upload-strip">
-        <span>Seleccionar archivos</span>
-        <strong>ning\u00fan archivo seleccionado</strong>
-      </div>
-      <div className="photo-placeholder">
-        <Camera size={62} />
-        <strong>Photo capture placeholder</strong>
-        <span>Before / during / after job images sync here.</span>
-      </div>
-      <button type="button" className="complete-button" onClick={onNotes}>
-        <Check size={24} />
-        Completion notes
-      </button>
-    </section>
-  );
-}
-
-function WaiverView() {
-  return (
-    <section className="screen-body waiver-body">
-      <div className="blue-divider" />
-      <h2>Renuncia / Sign-Off</h2>
-      <p>Customer signature and completion approval will be captured here.</p>
-      <div className="signature-box">
-        <PenLine size={48} />
-        <span>Signature area</span>
-      </div>
-      <button type="button" className="complete-button">
-        <Send size={22} />
-        Enviar aprobaci\u00f3n
-      </button>
-    </section>
-  );
-}
-
-function NotesModal({ onClose }) {
-  return (
-    <div className="modal-scrim" role="dialog" aria-modal="true">
-      <div className="notes-modal">
-        <div className="modal-accent" />
-        <h2>Completion Notes</h2>
-        <label>Notes</label>
-        <textarea />
-        <div className="modal-actions">
-          <button type="button" className="submit" onClick={onClose}>SUBMIT</button>
-          <button type="button" className="cancel" onClick={onClose}>CANCEL</button>
-        </div>
-      </div>
-    </div>
+    <button type="button" className={`app-button ${tone}`} onClick={onClick}>
+      {children}
+    </button>
   );
 }
 
 export default function App() {
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobs, setJobs] = useState(initialJobs);
+  const [selectedId, setSelectedId] = useState(initialJobs[0].id);
   const [tab, setTab] = useState('job');
+  const [role, setRole] = useState('Owner');
+  const [notice, setNotice] = useState('Ready for demo');
   const [notesOpen, setNotesOpen] = useState(false);
 
-  const currentJob = useMemo(() => selectedJob ?? jobs[0], [selectedJob]);
-  const title = selectedJob ? currentJob.code : 'DSW';
+  const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedId) ?? jobs[0], [jobs, selectedId]);
+
+  function markComplete() {
+    setJobs((current) =>
+      current.map((job) =>
+        job.id === selectedJob.id ? { ...job, status: 'Completed', alert: 'Owner SMS queued' } : job
+      )
+    );
+    setNotice(`Update sent: ${selectedJob.code} marked complete`);
+  }
+
+  function reportMaterial() {
+    setJobs((current) =>
+      current.map((job) =>
+        job.id === selectedJob.id ? { ...job, status: 'Blocked', material: 'Material request sent', alert: 'Owner SMS queued' } : job
+      )
+    );
+    setNotice(`Owner alert queued: material needed for ${selectedJob.code}`);
+  }
 
   return (
-    <div className="mobile-shell">
-      <div className="status-bar">
-        <span>5:32</span>
-        <span>WorkFlowOS Field</span>
-        <span>54%</span>
-      </div>
+    <div className="workspace">
+      <aside className="side-panel">
+        <div className="brand">
+          <div className="brand-mark">DS</div>
+          <div>
+            <span>WorkflowOS demo</span>
+            <strong>Desert Sky WorkApp</strong>
+          </div>
+        </div>
 
-      {selectedJob ? (
-        <>
-          <TopChrome
-            title={title}
-            onBack={() => {
-              setSelectedJob(null);
-              setTab('job');
-            }}
-            actionLabel="Enviar"
-            actionIcon={tab === 'photos' ? 'check' : 'edit'}
-            onAction={() => setNotesOpen(true)}
-          />
-          {tab === 'job' ? <JobDetail job={currentJob} onNotes={() => setNotesOpen(true)} /> : null}
-          {tab === 'photos' ? <PhotosView onNotes={() => setNotesOpen(true)} /> : null}
-          {tab === 'waiver' ? <WaiverView /> : null}
-          <BottomTabs active={tab} onChange={setTab} />
-        </>
-      ) : (
-        <>
-          <header className="phone-header home-header">
-            <button type="button" className="dark-action">
-              <Menu size={28} />
-              Menu
-            </button>
-            <strong>DSW</strong>
-            <button type="button" className="dark-action invisible">
-              <Home size={26} />
-              Home
-            </button>
-          </header>
-          <JobSearch onOpenJob={setSelectedJob} />
-          <nav className="bottom-tabs" aria-label="Home sections">
-            <button type="button" className="active"><ClipboardList size={20} /> Trabajos</button>
-            <button type="button"><Home size={20} /> Mapa</button>
-            <button type="button"><CalendarDays size={20} /> Calendario</button>
-          </nav>
-        </>
-      )}
+        <nav className="side-nav" aria-label="Main views">
+          <button className="active" type="button"><ClipboardList size={19} /> Trabajos</button>
+          <button type="button"><Camera size={19} /> Fotos</button>
+          <button type="button"><MessageSquareText size={19} /> Ping</button>
+          <button type="button"><PackageSearch size={19} /> Inventario</button>
+        </nav>
 
-      {notesOpen ? <NotesModal onClose={() => setNotesOpen(false)} /> : null}
+        <div className="license-note">
+          <ShieldCheck size={19} />
+          <span>Licensed client workspace. Platform stays reusable.</span>
+        </div>
+      </aside>
+
+      <main className="main">
+        <header className="topbar">
+          <div>
+            <span className="eyebrow">Demo for furniture, upholstery, repair, and restoration teams</span>
+            <h1>Field workflow connected to owner alerts</h1>
+          </div>
+          <div className="top-actions">
+            <select value={role} onChange={(event) => setRole(event.target.value)} aria-label="Role">
+              <option>Owner</option>
+              <option>Manager</option>
+              <option>Employee</option>
+            </select>
+            <AppButton onClick={() => setNotice(`Test ping sent to ${role}`)}>
+              <Send size={18} /> Send Test Ping
+            </AppButton>
+          </div>
+        </header>
+
+        <section className="notice-bar">
+          <BellRing size={18} />
+          <strong>{notice}</strong>
+        </section>
+
+        <section className="app-grid">
+          <div className="panel job-search-panel">
+            <label>Job search</label>
+            <div className="search-field">
+              <Search size={22} />
+              <span>Enter Job Name...</span>
+            </div>
+
+            <div className="job-groups">
+              {['Trabajos pasados', 'Trabajos de ayer'].map((label) => (
+                <button key={label} className="group-row" type="button">
+                  <CirclePlus size={24} />
+                  <strong>{label}</strong>
+                </button>
+              ))}
+
+              <div className="today-group">
+                <div className="today-heading">
+                  <CirclePlus size={24} />
+                  <strong>Trabajos de hoy</strong>
+                </div>
+                {jobs.map((job) => (
+                  <button
+                    key={job.id}
+                    type="button"
+                    className={`job-row ${selectedJob.id === job.id ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedId(job.id);
+                      setTab('job');
+                    }}
+                  >
+                    <div>
+                      <strong>{job.code}</strong>
+                      <span>{job.customer}</span>
+                    </div>
+                    <ChevronRight size={21} />
+                  </button>
+                ))}
+              </div>
+
+              {['Trabajos del ma\u00f1ana', 'Trabajos futuros'].map((label) => (
+                <button key={label} className="group-row" type="button">
+                  <CirclePlus size={24} />
+                  <strong>{label}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel work-panel">
+            <div className="work-header">
+              <div>
+                <span className="eyebrow">Active job</span>
+                <h2>{selectedJob.code}</h2>
+                <p>{selectedJob.customer}</p>
+              </div>
+              <span className={`status ${selectedJob.status.toLowerCase().replace(/\s/g, '-')}`}>{selectedJob.status}</span>
+            </div>
+
+            <div className="tabs">
+              {[
+                ['job', 'Trabajo', ClipboardList],
+                ['photos', 'Fotos', Camera],
+                ['sign', 'Renuncia', FilePlus]
+              ].map(([id, label, Icon]) => (
+                <button key={id} type="button" className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
+                  <Icon size={18} />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'job' ? (
+              <div className="job-form">
+                {[
+                  ['Salesperson', selectedJob.salesperson],
+                  ['Account', selectedJob.account],
+                  ['Nombre del trabajo', selectedJob.code],
+                  ['N\u00famero de trabajo', selectedJob.number],
+                  ['Tipo de trabajo', selectedJob.type],
+                  ['Fecha de vencimiento', selectedJob.due],
+                  ['Duration', selectedJob.duration],
+                  ['Tiempo de actividad', selectedJob.activity]
+                ].map(([label, value]) => (
+                  <div key={label} className="field-line">
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {tab === 'photos' ? (
+              <div className="photos-view">
+                <h3>Job Files</h3>
+                <button type="button" className="file-row"><FilePlus size={22} /> Archivos de WorkFlowOS</button>
+                <h3>Job Photos</h3>
+                <div className="photo-box">
+                  <Camera size={42} />
+                  <strong>Before / during / after photos</strong>
+                  <span>Field employees upload job photos here.</span>
+                </div>
+              </div>
+            ) : null}
+
+            {tab === 'sign' ? (
+              <div className="sign-view">
+                <h3>Completion sign-off</h3>
+                <div className="signature-area">
+                  <PenLine size={42} />
+                  <span>Customer signature area</span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="action-strip">
+              <AppButton tone="blue" onClick={reportMaterial}><PackageSearch size={18} /> Falta material</AppButton>
+              <AppButton tone="green" onClick={markComplete}><Check size={18} /> Completar</AppButton>
+              <AppButton onClick={() => setNotesOpen(true)}><PenLine size={18} /> Notes</AppButton>
+            </div>
+          </div>
+
+          <div className="panel side-card">
+            <h3>Owner alerts</h3>
+            <div className="alert-list">
+              {jobs.map((job) => (
+                <div key={job.id} className="alert-row">
+                  <MessageSquareText size={18} />
+                  <div>
+                    <strong>{job.code}</strong>
+                    <span>{job.alert}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel side-card">
+            <h3>Inventory</h3>
+            <div className="inventory-list">
+              {inventory.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mobile-tabs">
+            <button className="active" type="button"><Home size={18} /> Trabajos</button>
+            <button type="button"><MapPinned size={18} /> Mapa</button>
+            <button type="button"><CalendarDays size={18} /> Calendario</button>
+          </div>
+        </section>
+      </main>
+
+      {notesOpen ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="notes-modal">
+            <div className="modal-accent" />
+            <h2>Completion Notes</h2>
+            <label>Notes</label>
+            <textarea placeholder="Add completion notes for the owner..." />
+            <div className="modal-actions">
+              <button type="button" className="submit" onClick={() => {
+                setNotesOpen(false);
+                setNotice(`Completion notes saved for ${selectedJob.code}`);
+              }}>SUBMIT</button>
+              <button type="button" className="cancel" onClick={() => setNotesOpen(false)}>CANCEL</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
