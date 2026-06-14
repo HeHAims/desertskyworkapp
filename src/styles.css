@@ -229,6 +229,120 @@ button {
   color: #15364a;
 }
 
+.subpage {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #fff;
+  color: #243040;
+  padding: 10px 14px;
+  font-weight: 900;
+  margin-bottom: 16px;
+}
+
+.subpage-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.work-panel.wide,
+.subpage-panel {
+  max-width: 920px;
+}
+
+.subpage-panel h2 {
+  margin: 4px 0 16px;
+  color: #111827;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.subpage-copy {
+  max-width: 680px;
+  color: #5d6670;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.subpage-form {
+  grid-template-columns: 1fr 1fr;
+}
+
+.subpage-form .field-line:last-child {
+  grid-column: 1 / -1;
+}
+
+.subpage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.photo-workflow,
+.contact-actions,
+.subpage-list {
+  display: grid;
+  gap: 12px;
+}
+
+.photo-workflow {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 16px;
+}
+
+.photo-workflow button,
+.contact-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 64px;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #fff;
+  color: #243040;
+  padding: 12px;
+  font-weight: 900;
+}
+
+.photo-box.large,
+.signature-area.large {
+  min-height: 390px;
+}
+
+.map-preview {
+  display: grid;
+  min-height: 420px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  border: 1px solid #d7e2e7;
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.74)),
+    repeating-linear-gradient(45deg, #dcebf3 0 18px, #f3f7fa 19px 36px);
+  color: #15364a;
+  text-align: center;
+}
+
+.map-preview strong,
+.map-preview span {
+  display: block;
+}
+
+.page-list {
+  max-width: 680px;
+}
+
 .app-grid {
   display: grid;
   grid-template-columns: minmax(300px, 0.95fr) minmax(420px, 1.35fr) minmax(270px, 0.78fr);
@@ -854,6 +968,19 @@ button {
 
   .app-grid {
     grid-template-columns: 1fr;
+  }
+
+  .subpage-form,
+  .photo-workflow {
+    grid-template-columns: 1fr;
+  }
+
+  .subpage-panel h2 {
+    font-size: 29px;
+  }
+
+  .subpage-actions {
+    display: grid;
   }
 
   .job-search-panel,

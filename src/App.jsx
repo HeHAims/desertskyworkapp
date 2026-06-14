@@ -11,6 +11,7 @@ import {
   PackageSearch,
   PenLine,
   Phone,
+  ArrowLeft,
   Search,
   Send,
   ShieldCheck,
@@ -157,6 +158,7 @@ export default function App() {
   const [notice, setNotice] = useState('Ready for demo');
   const [notesOpen, setNotesOpen] = useState(false);
   const [adjustingItem, setAdjustingItem] = useState(null);
+  const [page, setPage] = useState('dashboard');
 
   const todayIso = isoDate(today);
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedId) ?? jobs[0], [jobs, selectedId]);
@@ -186,6 +188,7 @@ export default function App() {
   function openJob(job) {
     setSelectedId(job.id);
     setTab('instructions');
+    setPage('job');
     setNotice(`Opened ${job.code}: ${job.customer}`);
   }
 
@@ -220,6 +223,11 @@ export default function App() {
     setAdjustingItem(null);
   }
 
+  function openToolPage(nextPage, message) {
+    setPage(nextPage);
+    setNotice(message);
+  }
+
   const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
   const approvalJobs = jobs.filter((job) => job.needsApproval);
 
@@ -235,16 +243,25 @@ export default function App() {
         </div>
 
         <nav className="side-nav" aria-label="Main views">
-          <button className={filter === 'today' ? 'active' : ''} type="button" onClick={() => setFilter('today')}>
+          <button className={filter === 'today' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
+            setFilter('today');
+            setPage('dashboard');
+          }}>
             <ClipboardList size={19} /> Trabajo Hoy
           </button>
-          <button className={filter === 'active' ? 'active' : ''} type="button" onClick={() => setFilter('active')}>
+          <button className={filter === 'active' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
+            setFilter('active');
+            setPage('dashboard');
+          }}>
             <CalendarDays size={19} /> All Active
           </button>
-          <button className={filter === 'approval' ? 'active' : ''} type="button" onClick={() => setFilter('approval')}>
+          <button className={page === 'alerts' ? 'active' : ''} type="button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}>
             <BellRing size={19} /> Needs Approval
           </button>
-          <button className={filter === 'future' ? 'active' : ''} type="button" onClick={() => setFilter('future')}>
+          <button className={filter === 'future' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
+            setFilter('future');
+            setPage('dashboard');
+          }}>
             <CalendarDays size={19} /> Future Jobs
           </button>
         </nav>
@@ -276,6 +293,150 @@ export default function App() {
           <strong>{notice}</strong>
         </section>
 
+        {page !== 'dashboard' ? (
+          <section className="subpage">
+            <button type="button" className="back-button" onClick={() => setPage('dashboard')}>
+              <ArrowLeft size={19} />
+              Back to Trabajo Hoy
+            </button>
+
+            {page === 'job' ? (
+              <div className="subpage-grid">
+                <div className="panel work-panel wide">
+                  <div className="work-header">
+                    <div>
+                      <span className="eyebrow">Job detail</span>
+                      <h2>{selectedJob.code}</h2>
+                      <p>{selectedJob.customer}</p>
+                    </div>
+                    <span className={`status ${selectedJob.status.toLowerCase().replace(/\s/g, '-')}`}>{selectedJob.status}</span>
+                  </div>
+                  <div className="job-form subpage-form">
+                    {[
+                      ['Customer / Location', selectedJob.account],
+                      ['Address', selectedJob.address],
+                      ['Time Window', selectedJob.timeWindow],
+                      ['Job Type', selectedJob.type],
+                      ['Duration', selectedJob.duration],
+                      ['Material', selectedJob.material],
+                      ['Special Instructions', selectedJob.instructions]
+                    ].map(([label, value]) => (
+                      <div key={label} className="field-line">
+                        <span>{label}</span>
+                        <strong>{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="subpage-actions">
+                    <AppButton tone="blue" onClick={() => openToolPage('photos', 'Photos page opened')}><Camera size={18} /> Photos</AppButton>
+                    <AppButton tone="blue" onClick={() => openToolPage('sign', 'Sign-off page opened')}><FilePlus size={18} /> Sign-Off</AppButton>
+                    <AppButton tone="green" onClick={completeJob}><Check size={18} /> Complete Job</AppButton>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'photos' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">{selectedJob.code}</span>
+                <h2>Job Photos & Files</h2>
+                <div className="photo-workflow">
+                  <button type="button"><Camera size={24} /> Before photos</button>
+                  <button type="button"><Camera size={24} /> After photos</button>
+                  <button type="button"><FilePlus size={24} /> Measurements, drawings, and documents</button>
+                </div>
+                <div className="photo-box large">
+                  <Camera size={48} />
+                  <strong>Uploaded photos will appear here</strong>
+                  <span>For demo: this represents the job photo capture screen.</span>
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'sign' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">{selectedJob.code}</span>
+                <h2>Customer Sign-Off</h2>
+                <p className="subpage-copy">Capture approval at the job site and attach the signature directly to the work record.</p>
+                <div className="signature-area large">
+                  <PenLine size={52} />
+                  <span>Customer signature pad</span>
+                </div>
+                <div className="subpage-actions">
+                  <AppButton tone="green" onClick={completeJob}><Check size={18} /> Submit and Complete</AppButton>
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'alerts' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">Owner view</span>
+                <h2>Owner Alerts</h2>
+                <div className="subpage-list">
+                  {approvalJobs.map((job) => (
+                    <button key={job.id} type="button" className="alert-row" onClick={() => openJob(job)}>
+                      <MessageSquareText size={18} />
+                      <div>
+                        <strong>{job.code}</strong>
+                        <span>{job.alert} - {job.customer}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'inventory' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">Warehouse</span>
+                <h2>Inventory Adjustments</h2>
+                <div className="inventory-list page-list">
+                  {inventory.map((item) => (
+                    <button key={item.id} type="button" onClick={() => setAdjustingItem(item)}>
+                      <strong>{item.amount}</strong>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'map' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">{selectedJob.code}</span>
+                <h2>Navigate to Job</h2>
+                <div className="map-preview">
+                  <MapPinned size={54} />
+                  <strong>{selectedJob.address}</strong>
+                  <span>Demo map route preview</span>
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'contact' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">{selectedJob.code}</span>
+                <h2>Contact Customer</h2>
+                <div className="contact-actions">
+                  <button type="button" onClick={() => setNotice('Calling customer...')}><Phone size={22} /> Call customer</button>
+                  <button type="button" onClick={() => setNotice('Text sent: crew is on the way')}><MessageSquareText size={22} /> Send on-the-way text</button>
+                </div>
+              </div>
+            ) : null}
+
+            {page === 'pinglog' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">Automation</span>
+                <h2>Ping / Log Center</h2>
+                <div className="tool-actions page-list">
+                  <button type="button" onClick={() => setNotice('Alert sent: Customer notified of arrival')}>Send customer arrival ping</button>
+                  <button type="button" onClick={() => setNotice('Log: Status changed to In Progress')}>Write activity log entry</button>
+                  <button type="button" onClick={() => setNotice('Follow-up scheduled after job completion')}>Schedule follow-up</button>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : (
         <section className="app-grid">
           <div className="panel job-search-panel">
             <div className="panel-heading">
@@ -312,8 +473,14 @@ export default function App() {
                       openJob(job);
                       updateJobStatus('In progress', 'Status changed to In Progress');
                     }}>Start Job</button>
-                    <button type="button" onClick={() => setNotice(`Map opened for ${job.address}`)}><MapPinned size={16} /> Navigate</button>
-                    <button type="button" onClick={() => setNotice(`Contact options opened for ${job.customer}`)}><Phone size={16} /> Contact</button>
+                    <button type="button" onClick={() => {
+                      setSelectedId(job.id);
+                      openToolPage('map', `Map opened for ${job.address}`);
+                    }}><MapPinned size={16} /> Navigate</button>
+                    <button type="button" onClick={() => {
+                      setSelectedId(job.id);
+                      openToolPage('contact', `Contact options opened for ${job.customer}`);
+                    }}><Phone size={16} /> Contact</button>
                   </div>
                 </article>
               )) : (
@@ -400,7 +567,7 @@ export default function App() {
 
           <div className="right-column">
             <div className="panel side-card">
-              <button type="button" className="side-card-button" onClick={() => setFilter('approval')}>
+              <button type="button" className="side-card-button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}>
                 <h3>Owner Alerts</h3>
                 <span>{approvalJobs.length} needing attention</span>
               </button>
@@ -421,7 +588,7 @@ export default function App() {
               <h3>Inventory</h3>
               <div className="inventory-list">
                 {inventory.map((item) => (
-                  <button key={item.id} type="button" onClick={() => setAdjustingItem(item)}>
+                  <button key={item.id} type="button" onClick={() => openToolPage('inventory', 'Inventory opened')}>
                     <strong>{item.amount}</strong>
                     <span>{item.label}</span>
                   </button>
@@ -432,8 +599,8 @@ export default function App() {
             <div className="panel side-card">
               <h3>Ping / Log Demo</h3>
               <div className="tool-actions">
-                <button type="button" onClick={() => setNotice('Alert sent: Customer notified of arrival')}>Send Ping</button>
-                <button type="button" onClick={() => setNotice('Log: Status changed to In Progress')}>Write Log</button>
+                <button type="button" onClick={() => openToolPage('pinglog', 'Ping center opened')}>Send Ping</button>
+                <button type="button" onClick={() => openToolPage('pinglog', 'Log center opened')}>Write Log</button>
               </div>
             </div>
           </div>
@@ -451,11 +618,12 @@ export default function App() {
 
           <nav className="mobile-tabs" aria-label="Mobile navigation">
             <button className="active" type="button" onClick={() => setFilter('today')}><ClipboardList size={18} /> Jobs</button>
-            <button type="button" onClick={() => setFilter('approval')}><BellRing size={18} /> Alerts</button>
-            <button type="button" onClick={() => setNotice('Inventory opened')}><PackageSearch size={18} /> Inventory</button>
+            <button type="button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}><BellRing size={18} /> Alerts</button>
+            <button type="button" onClick={() => openToolPage('inventory', 'Inventory opened')}><PackageSearch size={18} /> Inventory</button>
             <button type="button" onClick={() => setRole(role === 'Technician' ? 'Owner' : 'Technician')}><UserRound size={18} /> Me</button>
           </nav>
         </section>
+        )}
       </main>
 
       {notesOpen ? (
