@@ -3,8 +3,6 @@ import {
   CalendarDays,
   Camera,
   Check,
-  ChevronRight,
-  CirclePlus,
   ClipboardList,
   FilePlus,
   Home,
@@ -12,11 +10,28 @@ import {
   MessageSquareText,
   PackageSearch,
   PenLine,
+  Phone,
   Search,
   Send,
-  ShieldCheck
+  ShieldCheck,
+  UserRound
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
+const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+const yesterday = new Date(today);
+yesterday.setDate(today.getDate() - 1);
+
+const isoDate = (date) => date.toISOString().slice(0, 10);
+const displayDate = (date) =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
 
 const initialJobs = [
   {
@@ -25,15 +40,17 @@ const initialJobs = [
     number: '126858',
     account: 'AMW - WESLEY PARK',
     type: 'Install',
-    due: '06/05/2026',
-    duration: 'unknown',
+    date: isoDate(today),
+    timeWindow: '10:00 AM - 12:00 PM',
+    duration: 'TBD',
     salesperson: 'Ana',
     customer: 'Hospitality booth set',
-    status: 'Needs approval',
+    address: '123 Main St, Phoenix, AZ',
+    status: 'Ready',
     material: 'Charcoal vinyl low',
-    activity: 'Fabric approval and booth install',
+    instructions: 'Confirm fabric approval, capture before photos, install booth set, collect customer sign-off.',
     alert: 'Owner approval needed',
-    period: 'today'
+    needsApproval: true
   },
   {
     id: 'DSV-1043',
@@ -41,15 +58,17 @@ const initialJobs = [
     number: '126861',
     account: 'Residential Client',
     type: 'Repair',
-    due: '06/06/2026',
+    date: isoDate(today),
+    timeWindow: '1:00 PM - 3:00 PM',
     duration: '2 hrs',
     salesperson: 'Maria',
     customer: 'Antique chair restoration',
-    status: 'In production',
+    address: '440 S Valley View Blvd, Las Vegas, NV',
+    status: 'Ready',
     material: 'Supplies ready',
-    activity: 'Frame repair and fabric prep',
-    alert: 'Technician working',
-    period: 'today'
+    instructions: 'Repair frame, photo completed work, note any additional fabric damage.',
+    alert: 'Technician assigned',
+    needsApproval: false
   },
   {
     id: 'DSV-1044',
@@ -57,15 +76,17 @@ const initialJobs = [
     number: '126874',
     account: 'Desert Sky Custom',
     type: 'Custom furniture',
-    due: '06/07/2026',
-    duration: '4 hrs',
+    date: isoDate(today),
+    timeWindow: '3:30 PM - 5:00 PM',
+    duration: '1.5 hrs',
     salesperson: 'Luis',
     customer: 'Custom banquette build',
+    address: '3770 S Valley View Blvd, Las Vegas, NV',
     status: 'Blocked',
     material: 'Webbing missing',
-    activity: 'Waiting on webbing before upholstery',
+    instructions: 'Do not begin upholstery until webbing is confirmed. Notify owner if material is still missing.',
     alert: 'Inventory shortage',
-    period: 'today'
+    needsApproval: true
   },
   {
     id: 'DSV-1038',
@@ -73,31 +94,17 @@ const initialJobs = [
     number: '126801',
     account: 'The Mirage Villas',
     type: 'Repair',
-    due: '06/03/2026',
+    date: isoDate(yesterday),
+    timeWindow: '9:00 AM - 11:00 AM',
     duration: '3 hrs',
     salesperson: 'Ana',
     customer: 'Lobby chair repair',
+    address: '2000 Resort Dr, Las Vegas, NV',
     status: 'Completed',
     material: 'Brown vinyl used',
-    activity: 'Completed with photos and customer sign-off',
+    instructions: 'Completed with photos and customer sign-off.',
     alert: 'Completion email sent',
-    period: 'past'
-  },
-  {
-    id: 'DSV-1039',
-    code: '09402 / 1120-7',
-    number: '126812',
-    account: 'Local Restaurant',
-    type: 'Upholstery',
-    due: '06/04/2026',
-    duration: '1.5 hrs',
-    salesperson: 'Luis',
-    customer: 'Dining booth touch-up',
-    status: 'Completed',
-    material: 'Black thread used',
-    activity: 'Before and after photos captured',
-    alert: 'Yesterday job archived',
-    period: 'past'
+    needsApproval: false
   },
   {
     id: 'DSV-1048',
@@ -105,78 +112,30 @@ const initialJobs = [
     number: '126910',
     account: 'Boutique Hotel',
     type: 'Install',
-    due: '06/08/2026',
-    duration: '5 hrs',
+    date: isoDate(tomorrow),
+    timeWindow: '8:30 AM - 11:30 AM',
+    duration: '3 hrs',
     salesperson: 'Maria',
     customer: 'Suite headboard install',
+    address: '86 Fremont St, Las Vegas, NV',
     status: 'Scheduled',
     material: 'Cream fabric reserved',
-    activity: 'Daily email notification scheduled',
+    instructions: 'Daily email notification scheduled. Bring headboard brackets and floor protection.',
     alert: 'Tomorrow route ready',
-    period: 'future'
-  },
-  {
-    id: 'DSV-1050',
-    code: '09444 / 7090-3',
-    number: '126924',
-    account: 'Private Client',
-    type: 'Custom furniture',
-    due: '06/12/2026',
-    duration: 'unknown',
-    salesperson: 'Ana',
-    customer: 'Custom ottoman build',
-    status: 'Scheduled',
-    material: 'Waiting fabric selection',
-    activity: 'Measurements and drawings attached',
-    alert: 'Future job queued',
-    period: 'future'
+    needsApproval: false
   }
 ];
 
-const forms = ['Pickup condition report', 'Fabric approval form', 'Delivery sign-off', 'Repair notes'];
-const inventory = ['18 yd Charcoal vinyl', '1 roll Webbing left', '6 spools Black thread'];
-const jobSections = [
-  { id: 'past', label: 'Trabajos pasados', empty: 'No past jobs ready' },
-  { id: 'today', label: 'Trabajos de hoy', empty: 'No jobs for today' },
-  { id: 'future', label: 'Trabajos futuros', empty: 'No future jobs scheduled' }
+const startingInventory = [
+  { id: 'vinyl', label: 'Charcoal vinyl', amount: '18 yd' },
+  { id: 'webbing', label: 'Webbing left', amount: '1 roll' },
+  { id: 'thread', label: 'Black thread', amount: '6 spools' }
 ];
+
 const featureGroups = [
-  {
-    title: 'Field Service',
-    intro: 'Installers get job details, instructions, photos, maps, and sign-offs in one mobile-friendly workflow.',
-    items: [
-      'Special instructions and documentation',
-      'Before and after photos',
-      'Mobile customer sign-offs',
-      'Daily email notifications',
-      'Customer info and location maps',
-      'Instant job completion view'
-    ]
-  },
-  {
-    title: 'Ping Automation',
-    intro: 'Customer and owner communication is handled from job activity instead of manual follow-up calls.',
-    items: [
-      'Automated appointment reminders',
-      'Customer on-the-way texts',
-      'Follow-up messages',
-      'Company-branded communications',
-      'Easy confirm or reschedule',
-      'Activity status updates'
-    ]
-  },
-  {
-    title: 'Log Visibility',
-    intro: 'Every important change becomes a clean activity feed so the owner and shop know what happened.',
-    items: [
-      'Real-time activity feed',
-      'Instant issue alerts',
-      'Email alerts to the right people',
-      'Sales and manager visibility',
-      'Shop-wide status awareness',
-      'Designed around service workflows'
-    ]
-  }
+  ['Field', 'Instructions, photos, maps, customer sign-off, and instant completion view.'],
+  ['Ping', 'Appointment reminders, on-the-way texts, follow-ups, and branded customer communication.'],
+  ['Log', 'Real-time job changes, issue alerts, owner visibility, and shop activity history.']
 ];
 
 function AppButton({ children, tone = 'dark', onClick }) {
@@ -189,50 +148,80 @@ function AppButton({ children, tone = 'dark', onClick }) {
 
 export default function App() {
   const [jobs, setJobs] = useState(initialJobs);
+  const [inventory, setInventory] = useState(startingInventory);
   const [selectedId, setSelectedId] = useState(initialJobs[0].id);
-  const [tab, setTab] = useState('job');
-  const [role, setRole] = useState('Owner');
+  const [role, setRole] = useState('Technician');
+  const [filter, setFilter] = useState('today');
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState('instructions');
   const [notice, setNotice] = useState('Ready for demo');
   const [notesOpen, setNotesOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('today');
+  const [adjustingItem, setAdjustingItem] = useState(null);
 
+  const todayIso = isoDate(today);
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedId) ?? jobs[0], [jobs, selectedId]);
-  const visibleJobs = useMemo(() => jobs.filter((job) => job.period === activeSection), [jobs, activeSection]);
+
+  const filteredJobs = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return jobs.filter((job) => {
+      const matchesFilter =
+        filter === 'today'
+          ? job.date === todayIso && job.status !== 'Completed'
+          : filter === 'active'
+            ? job.status !== 'Completed'
+            : filter === 'approval'
+              ? job.needsApproval
+              : filter === 'future'
+                ? job.date > todayIso
+                : true;
+
+      const matchesSearch =
+        !term ||
+        [job.code, job.customer, job.account, job.address, job.type].some((value) => value.toLowerCase().includes(term));
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [filter, jobs, search, todayIso]);
 
   function openJob(job) {
     setSelectedId(job.id);
-    setActiveSection(job.period);
-    setTab('job');
+    setTab('instructions');
     setNotice(`Opened ${job.code}: ${job.customer}`);
   }
 
-  function openSection(sectionId) {
-    const nextJob = jobs.find((job) => job.period === sectionId);
-    setActiveSection(sectionId);
-    if (nextJob) {
-      setSelectedId(nextJob.id);
-      setTab('job');
-      setNotice(`Showing ${jobSections.find((section) => section.id === sectionId)?.label}`);
-    }
-  }
-
-  function markComplete() {
+  function updateJobStatus(status, alert) {
     setJobs((current) =>
       current.map((job) =>
-        job.id === selectedJob.id ? { ...job, status: 'Completed', alert: 'Owner SMS queued' } : job
+        job.id === selectedJob.id
+          ? { ...job, status, alert, needsApproval: status === 'Needs approval' || job.needsApproval }
+          : job
       )
     );
-    setNotice(`Update sent: ${selectedJob.code} marked complete`);
+    setNotice(`${selectedJob.code}: ${alert}`);
   }
 
-  function reportMaterial() {
+  function completeJob() {
     setJobs((current) =>
       current.map((job) =>
-        job.id === selectedJob.id ? { ...job, status: 'Blocked', material: 'Material request sent', alert: 'Owner SMS queued' } : job
+        job.id === selectedJob.id
+          ? { ...job, status: 'Completed', alert: 'Completed with photos and sign-off', needsApproval: false }
+          : job
       )
     );
-    setNotice(`Owner alert queued: material needed for ${selectedJob.code}`);
+    setFilter('today');
+    setNotice(`${selectedJob.code} completed and removed from Trabajo Hoy`);
   }
+
+  function saveInventory(amount) {
+    setInventory((current) =>
+      current.map((item) => (item.id === adjustingItem.id ? { ...item, amount } : item))
+    );
+    setNotice(`Inventory updated: ${adjustingItem.label} is now ${amount}`);
+    setAdjustingItem(null);
+  }
+
+  const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
+  const approvalJobs = jobs.filter((job) => job.needsApproval);
 
   return (
     <div className="workspace">
@@ -246,10 +235,18 @@ export default function App() {
         </div>
 
         <nav className="side-nav" aria-label="Main views">
-          <button className="active" type="button"><ClipboardList size={19} /> Trabajos</button>
-          <button type="button"><Camera size={19} /> Fotos</button>
-          <button type="button"><MessageSquareText size={19} /> Ping</button>
-          <button type="button"><PackageSearch size={19} /> Inventario</button>
+          <button className={filter === 'today' ? 'active' : ''} type="button" onClick={() => setFilter('today')}>
+            <ClipboardList size={19} /> Trabajo Hoy
+          </button>
+          <button className={filter === 'active' ? 'active' : ''} type="button" onClick={() => setFilter('active')}>
+            <CalendarDays size={19} /> All Active
+          </button>
+          <button className={filter === 'approval' ? 'active' : ''} type="button" onClick={() => setFilter('approval')}>
+            <BellRing size={19} /> Needs Approval
+          </button>
+          <button className={filter === 'future' ? 'active' : ''} type="button" onClick={() => setFilter('future')}>
+            <CalendarDays size={19} /> Future Jobs
+          </button>
         </nav>
 
         <div className="license-note">
@@ -261,18 +258,16 @@ export default function App() {
       <main className="main">
         <header className="topbar">
           <div>
-            <span className="eyebrow">Demo for furniture, upholstery, repair, and restoration teams</span>
-            <h1>Field workflow connected to owner alerts</h1>
+            <span className="eyebrow">Technician action center + owner approval view</span>
+            <h1>Trabajo Hoy connected to alerts, inventory, and sign-off</h1>
           </div>
-          <div className="top-actions">
-            <select value={role} onChange={(event) => setRole(event.target.value)} aria-label="Role">
-              <option>Owner</option>
-              <option>Manager</option>
-              <option>Employee</option>
-            </select>
-            <AppButton onClick={() => setNotice(`Test ping sent to ${role}`)}>
-              <Send size={18} /> Send Test Ping
-            </AppButton>
+          <div className="role-switch" aria-label="Role switch">
+            {['Technician', 'Owner'].map((item) => (
+              <button key={item} type="button" className={role === item ? 'active' : ''} onClick={() => setRole(item)}>
+                {item === 'Technician' ? <UserRound size={17} /> : <ShieldCheck size={17} />}
+                {item}
+              </button>
+            ))}
           </div>
         </header>
 
@@ -283,51 +278,57 @@ export default function App() {
 
         <section className="app-grid">
           <div className="panel job-search-panel">
-            <label>Job search</label>
-            <div className="search-field">
-              <Search size={22} />
-              <span>Enter Job Name...</span>
+            <div className="panel-heading">
+              <span className="eyebrow">{filter === 'today' ? displayDate(today) : 'Filtered jobs'}</span>
+              <h2>{filter === 'today' ? 'Trabajo Hoy' : filter === 'approval' ? 'Needs Approval' : 'Job List'}</h2>
             </div>
 
-            <div className="job-groups">
-              {jobSections.map((section) => {
-                const sectionJobs = jobs.filter((job) => job.period === section.id);
-                const open = activeSection === section.id;
-                return (
-                  <div key={section.id} className={`job-section ${open ? 'open' : ''}`}>
-                    <button className="group-row" type="button" onClick={() => openSection(section.id)}>
-                      <CirclePlus size={24} />
-                      <strong>{section.label}</strong>
-                      <span>{sectionJobs.length}</span>
-                    </button>
-                    {open ? (
-                      <div className="section-jobs">
-                        {visibleJobs.length ? visibleJobs.map((job) => (
-                          <button
-                            key={job.id}
-                            type="button"
-                            className={`job-row ${selectedJob.id === job.id ? 'selected' : ''}`}
-                            onClick={() => openJob(job)}
-                          >
-                            <div>
-                              <strong>{job.code}</strong>
-                              <span>{job.customer}</span>
-                            </div>
-                            <ChevronRight size={21} />
-                          </button>
-                        )) : <p>{section.empty}</p>}
-                      </div>
-                    ) : null}
+            <label className="search-field">
+              <Search size={22} />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs, customer, address..." />
+            </label>
+
+            <div className="filter-row">
+              <button className={filter === 'today' ? 'active' : ''} type="button" onClick={() => setFilter('today')}>Today</button>
+              <button className={filter === 'active' ? 'active' : ''} type="button" onClick={() => setFilter('active')}>All Active</button>
+              <button className={filter === 'approval' ? 'active' : ''} type="button" onClick={() => setFilter('approval')}>Needs Approval</button>
+            </div>
+
+            <div className="job-card-list">
+              {filteredJobs.length ? filteredJobs.map((job) => (
+                <article key={job.id} className={`today-card ${selectedJob.id === job.id ? 'selected' : ''}`}>
+                  <button type="button" className="job-open" onClick={() => openJob(job)}>
+                    <strong>{job.code}</strong>
+                    <span>{job.customer}</span>
+                  </button>
+                  <p>{job.account}</p>
+                  <p>{job.address}</p>
+                  <div className="job-meta-line">
+                    <span>{job.timeWindow}</span>
+                    <span className={`status ${job.status.toLowerCase().replace(/\s/g, '-')}`}>{job.status}</span>
                   </div>
-                );
-              })}
+                  <div className="card-actions">
+                    <button type="button" onClick={() => {
+                      openJob(job);
+                      updateJobStatus('In progress', 'Status changed to In Progress');
+                    }}>Start Job</button>
+                    <button type="button" onClick={() => setNotice(`Map opened for ${job.address}`)}><MapPinned size={16} /> Navigate</button>
+                    <button type="button" onClick={() => setNotice(`Contact options opened for ${job.customer}`)}><Phone size={16} /> Contact</button>
+                  </div>
+                </article>
+              )) : (
+                <div className="empty-state">
+                  <strong>No jobs scheduled for today.</strong>
+                  <span>Check Future Jobs or contact dispatch.</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="panel work-panel">
             <div className="work-header">
               <div>
-                <span className="eyebrow">Active job</span>
+                <span className="eyebrow">Selected job detail</span>
                 <h2>{selectedJob.code}</h2>
                 <p>{selectedJob.customer}</p>
               </div>
@@ -336,9 +337,9 @@ export default function App() {
 
             <div className="tabs">
               {[
-                ['job', 'Trabajo', ClipboardList],
-                ['photos', 'Fotos', Camera],
-                ['sign', 'Renuncia', FilePlus]
+                ['instructions', 'Instructions', ClipboardList],
+                ['photos', 'Photos', Camera],
+                ['sign', 'Sign-Off', FilePlus]
               ].map(([id, label, Icon]) => (
                 <button key={id} type="button" className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
                   <Icon size={18} />
@@ -347,17 +348,16 @@ export default function App() {
               ))}
             </div>
 
-            {tab === 'job' ? (
+            {tab === 'instructions' ? (
               <div className="job-form">
                 {[
-                  ['Salesperson', selectedJob.salesperson],
-                  ['Account', selectedJob.account],
-                  ['Nombre del trabajo', selectedJob.code],
-                  ['N\u00famero de trabajo', selectedJob.number],
-                  ['Tipo de trabajo', selectedJob.type],
-                  ['Fecha de vencimiento', selectedJob.due],
+                  ['Customer / Location', selectedJob.account],
+                  ['Address', selectedJob.address],
+                  ['Time Window', selectedJob.timeWindow],
+                  ['Job Type', selectedJob.type],
                   ['Duration', selectedJob.duration],
-                  ['Tiempo de actividad', selectedJob.activity]
+                  ['Material', selectedJob.material],
+                  ['Special Instructions', selectedJob.instructions]
                 ].map(([label, value]) => (
                   <div key={label} className="field-line">
                     <span>{label}</span>
@@ -369,83 +369,92 @@ export default function App() {
 
             {tab === 'photos' ? (
               <div className="photos-view">
-                <h3>Job Files</h3>
-                <button type="button" className="file-row"><FilePlus size={22} /> Archivos de WorkFlowOS</button>
-                <h3>Job Photos</h3>
-                <div className="photo-box">
-                  <Camera size={42} />
-                  <strong>Before / during / after photos</strong>
-                  <span>Field employees upload job photos here.</span>
-                </div>
+                <h3>Before & After Photos</h3>
+                <button type="button" className="file-row"><Camera size={22} /> Add before photo</button>
+                <button type="button" className="file-row"><Camera size={22} /> Add after photo</button>
+                <button type="button" className="file-row"><FilePlus size={22} /> Upload special instructions / drawings</button>
               </div>
             ) : null}
 
             {tab === 'sign' ? (
               <div className="sign-view">
-                <h3>Completion sign-off</h3>
+                <h3>Mobile Customer Sign-Off</h3>
                 <div className="signature-area">
                   <PenLine size={42} />
-                  <span>Customer signature area</span>
+                  <span>Customer signature pad</span>
                 </div>
               </div>
             ) : null}
 
             <div className="action-strip">
-              <AppButton tone="blue" onClick={reportMaterial}><PackageSearch size={18} /> Falta material</AppButton>
-              <AppButton tone="green" onClick={markComplete}><Check size={18} /> Completar</AppButton>
+              <AppButton tone="blue" onClick={() => updateJobStatus('Needs approval', 'Owner approval requested')}>
+                <BellRing size={18} /> Request Approval
+              </AppButton>
+              <AppButton tone="blue" onClick={() => setNotice(`Alert sent: Customer notified crew is on the way`)}>
+                <MessageSquareText size={18} /> On-The-Way Text
+              </AppButton>
+              <AppButton tone="green" onClick={completeJob}><Check size={18} /> Complete Job</AppButton>
               <AppButton onClick={() => setNotesOpen(true)}><PenLine size={18} /> Notes</AppButton>
             </div>
           </div>
 
-          <div className="panel side-card">
-            <h3>Owner alerts</h3>
-            <div className="alert-list">
-              {jobs.map((job) => (
-                <div key={job.id} className="alert-row">
-                  <MessageSquareText size={18} />
-                  <div>
-                    <strong>{job.code}</strong>
-                    <span>{job.alert}</span>
-                  </div>
-                </div>
-              ))}
+          <div className="right-column">
+            <div className="panel side-card">
+              <button type="button" className="side-card-button" onClick={() => setFilter('approval')}>
+                <h3>Owner Alerts</h3>
+                <span>{approvalJobs.length} needing attention</span>
+              </button>
+              <div className="alert-list">
+                {approvalJobs.map((job) => (
+                  <button key={job.id} type="button" className="alert-row" onClick={() => openJob(job)}>
+                    <MessageSquareText size={18} />
+                    <div>
+                      <strong>{job.code}</strong>
+                      <span>{job.alert}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="panel side-card">
-            <h3>Inventory</h3>
-            <div className="inventory-list">
-              {inventory.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
+            <div className="panel side-card">
+              <h3>Inventory</h3>
+              <div className="inventory-list">
+                {inventory.map((item) => (
+                  <button key={item.id} type="button" onClick={() => setAdjustingItem(item)}>
+                    <strong>{item.amount}</strong>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="panel side-card">
+              <h3>Ping / Log Demo</h3>
+              <div className="tool-actions">
+                <button type="button" onClick={() => setNotice('Alert sent: Customer notified of arrival')}>Send Ping</button>
+                <button type="button" onClick={() => setNotice('Log: Status changed to In Progress')}>Write Log</button>
+              </div>
             </div>
           </div>
 
           <div className="panel feature-panel">
-            <div className="feature-heading">
-              <span className="eyebrow">Included workflow tools</span>
-              <h3>Field, Ping, and Log features for the demo</h3>
-            </div>
             <div className="feature-grid">
-              {featureGroups.map((group) => (
-                <article key={group.title} className="feature-card">
-                  <h4>{group.title}</h4>
-                  <p>{group.intro}</p>
-                  <div>
-                    {group.items.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
+              {featureGroups.map(([title, copy]) => (
+                <article key={title} className="feature-card">
+                  <h4>{title}</h4>
+                  <p>{copy}</p>
                 </article>
               ))}
             </div>
           </div>
 
-          <div className="mobile-tabs">
-            <button className="active" type="button"><Home size={18} /> Trabajos</button>
-            <button type="button"><MapPinned size={18} /> Mapa</button>
-            <button type="button"><CalendarDays size={18} /> Calendario</button>
-          </div>
+          <nav className="mobile-tabs" aria-label="Mobile navigation">
+            <button className="active" type="button" onClick={() => setFilter('today')}><ClipboardList size={18} /> Jobs</button>
+            <button type="button" onClick={() => setFilter('approval')}><BellRing size={18} /> Alerts</button>
+            <button type="button" onClick={() => setNotice('Inventory opened')}><PackageSearch size={18} /> Inventory</button>
+            <button type="button" onClick={() => setRole(role === 'Technician' ? 'Owner' : 'Technician')}><UserRound size={18} /> Me</button>
+          </nav>
         </section>
       </main>
 
@@ -464,6 +473,24 @@ export default function App() {
               <button type="button" className="cancel" onClick={() => setNotesOpen(false)}>CANCEL</button>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {adjustingItem ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <form className="notes-modal" onSubmit={(event) => {
+            event.preventDefault();
+            saveInventory(new FormData(event.currentTarget).get('amount'));
+          }}>
+            <div className="modal-accent" />
+            <h2>Adjust Inventory</h2>
+            <label>{adjustingItem.label}</label>
+            <input name="amount" defaultValue={adjustingItem.amount} className="amount-input" />
+            <div className="modal-actions">
+              <button type="submit" className="submit">SAVE</button>
+              <button type="button" className="cancel" onClick={() => setAdjustingItem(null)}>CANCEL</button>
+            </div>
+          </form>
         </div>
       ) : null}
     </div>
