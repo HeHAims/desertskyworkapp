@@ -1,261 +1,305 @@
 import {
-  BellRing,
+  ArrowLeft,
+  CalendarDays,
   Camera,
-  ClipboardCheck,
+  Check,
+  ChevronRight,
+  CircleMinus,
+  CirclePlus,
   ClipboardList,
-  FileSignature,
-  LayoutDashboard,
-  ListChecks,
+  FilePlus,
+  Home,
+  Menu,
   MessageSquareText,
-  PackageCheck,
+  PackageSearch,
   PenLine,
-  Send,
-  ShieldCheck,
-  Smartphone,
-  Sparkles,
-  UserCheck
+  Search,
+  Send
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { activity, forms, jobs, modules, pings } from './demoData.js';
 
-const moduleIcons = {
-  field: Smartphone,
-  dox: FileSignature,
-  ping: MessageSquareText,
-  log: ListChecks
-};
+const jobGroups = [
+  { id: 'past', label: 'Trabajos pasados', count: 4, open: false },
+  { id: 'yesterday', label: 'Trabajos de ayer', count: 2, open: false },
+  { id: 'today', label: 'Trabajos de hoy', count: 3, open: true },
+  { id: 'tomorrow', label: 'Trabajos del ma\u00f1ana', count: 2, open: false },
+  { id: 'future', label: 'Trabajos futuros', count: 6, open: false }
+];
 
-const statusClass = {
-  'Needs decision': 'status warning',
-  'In production': 'status good',
-  Blocked: 'status danger'
-};
+const jobs = [
+  {
+    id: 'DSV-1042',
+    code: '09424 / 3020-2',
+    number: '126858',
+    account: 'AMW - WESLEY PARK',
+    type: 'Install',
+    due: '06/05/2026',
+    duration: 'unknown',
+    salesperson: '',
+    activity: 'Fabric approval and booth install',
+    status: 'Needs approval',
+    customer: 'Hospitality booth set',
+    address: '3770 S Valley View Blvd, Las Vegas',
+    material: 'Charcoal vinyl low'
+  },
+  {
+    id: 'DSV-1043',
+    code: '09425 / 4021-8',
+    number: '126861',
+    account: 'Residential Client',
+    type: 'Repair',
+    due: '06/06/2026',
+    duration: '2 hrs',
+    salesperson: 'Maria',
+    activity: 'Antique chair frame repair',
+    status: 'In production',
+    customer: 'Antique chair restoration',
+    address: 'Pickup required',
+    material: 'Supplies ready'
+  }
+];
+
+const fieldRows = [
+  ['Salesperson', 'salesperson'],
+  ['Account', 'account'],
+  ['Nombre del trabajo', 'code'],
+  ['N\u00famero de trabajo', 'number'],
+  ['Tipo de trabajo', 'type']
+];
+
+function TopChrome({ title, onBack, actionLabel, actionIcon = 'edit', onAction }) {
+  return (
+    <header className="phone-header">
+      <button type="button" className="dark-action" onClick={onBack}>
+        <ArrowLeft size={26} />
+        Regresar
+      </button>
+      <strong>{title}</strong>
+      <button type="button" className="dark-action" onClick={onAction}>
+        {actionIcon === 'check' ? <Check size={26} /> : <PenLine size={26} />}
+        {actionLabel}
+      </button>
+    </header>
+  );
+}
+
+function BottomTabs({ active, onChange }) {
+  return (
+    <nav className="bottom-tabs" aria-label="Job sections">
+      {[
+        ['job', 'Trabajo', ClipboardList],
+        ['photos', 'Fotos', Camera],
+        ['waiver', 'Renuncia', FilePlus]
+      ].map(([id, label, Icon]) => (
+        <button key={id} type="button" className={active === id ? 'active' : ''} onClick={() => onChange(id)}>
+          <Icon size={20} />
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function JobSearch({ onOpenJob }) {
+  return (
+    <section className="screen-body">
+      <label className="search-label">Job search</label>
+      <div className="search-box">
+        <Search size={28} />
+        <span>Enter Job Name...</span>
+      </div>
+
+      <div className="group-stack">
+        {jobGroups.map((group) => (
+          <article key={group.id} className={`job-group ${group.open ? 'open' : ''}`}>
+            <button type="button" className="group-heading">
+              {group.open ? <CircleMinus size={35} /> : <CirclePlus size={35} />}
+              <span>{group.label}</span>
+            </button>
+            {group.open ? (
+              <div className="group-content">
+                <div className="filter-box">
+                  <Search size={24} />
+                  <span>Filter items...</span>
+                </div>
+                {jobs.map((job) => (
+                  <button key={job.id} type="button" className="job-picker" onClick={() => onOpenJob(job)}>
+                    <div>
+                      <strong>{job.code}</strong>
+                      <span>{job.customer}</span>
+                    </div>
+                    <ChevronRight size={24} />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+
+      <div className="demo-logo">
+        <div className="logo-triangle">DS</div>
+        <strong>Desert Sky WorkApp</strong>
+      </div>
+    </section>
+  );
+}
+
+function JobDetail({ job, onNotes }) {
+  return (
+    <section className="screen-body detail-body">
+      {fieldRows.map(([label, key]) => (
+        <div key={key} className="form-row">
+          <label>{label}</label>
+          <div className="readonly-input">{job[key] || '\u00a0'}</div>
+        </div>
+      ))}
+
+      <div className="two-col">
+        <div className="form-row">
+          <label>Fecha de vencimiento</label>
+          <div className="readonly-input">{job.due}</div>
+        </div>
+        <div className="form-row">
+          <label>Duration</label>
+          <div className="readonly-input">{job.duration}</div>
+        </div>
+      </div>
+
+      <div className="form-row">
+        <label>Tiempo de actividad</label>
+        <div className="large-input">{job.activity}</div>
+      </div>
+
+      <div className="quick-actions">
+        <button type="button"><MessageSquareText size={22} /> Avisar due\u00f1o</button>
+        <button type="button"><PackageSearch size={22} /> Falta material</button>
+        <button type="button" onClick={onNotes}><Check size={22} /> Completar</button>
+      </div>
+    </section>
+  );
+}
+
+function PhotosView({ onNotes }) {
+  return (
+    <section className="screen-body photos-body">
+      <div className="blue-divider" />
+      <h2>Job Files</h2>
+      <button type="button" className="file-button">
+        <CirclePlus size={32} />
+        Archivos de WorkFlowOS
+      </button>
+      <div className="blue-divider" />
+      <h2>Job Photos</h2>
+      <label className="photo-label">Antes de</label>
+      <div className="upload-strip">
+        <span>Seleccionar archivos</span>
+        <strong>ning\u00fan archivo seleccionado</strong>
+      </div>
+      <div className="photo-placeholder">
+        <Camera size={62} />
+        <strong>Photo capture placeholder</strong>
+        <span>Before / during / after job images sync here.</span>
+      </div>
+      <button type="button" className="complete-button" onClick={onNotes}>
+        <Check size={24} />
+        Completion notes
+      </button>
+    </section>
+  );
+}
+
+function WaiverView() {
+  return (
+    <section className="screen-body waiver-body">
+      <div className="blue-divider" />
+      <h2>Renuncia / Sign-Off</h2>
+      <p>Customer signature and completion approval will be captured here.</p>
+      <div className="signature-box">
+        <PenLine size={48} />
+        <span>Signature area</span>
+      </div>
+      <button type="button" className="complete-button">
+        <Send size={22} />
+        Enviar aprobaci\u00f3n
+      </button>
+    </section>
+  );
+}
+
+function NotesModal({ onClose }) {
+  return (
+    <div className="modal-scrim" role="dialog" aria-modal="true">
+      <div className="notes-modal">
+        <div className="modal-accent" />
+        <h2>Completion Notes</h2>
+        <label>Notes</label>
+        <textarea />
+        <div className="modal-actions">
+          <button type="button" className="submit" onClick={onClose}>SUBMIT</button>
+          <button type="button" className="cancel" onClick={onClose}>CANCEL</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  const [activeModule, setActiveModule] = useState('field');
-  const active = useMemo(() => modules.find((module) => module.id === activeModule), [activeModule]);
-  const ActiveIcon = moduleIcons[active.id];
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [tab, setTab] = useState('job');
+  const [notesOpen, setNotesOpen] = useState(false);
+
+  const currentJob = useMemo(() => selectedJob ?? jobs[0], [selectedJob]);
+  const title = selectedJob ? currentJob.code : 'DSW';
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup">
-          <div className="brand-mark">DS</div>
-          <div>
-            <p className="eyebrow">WorkFlowOS Demo</p>
-            <h1>Desert Sky WorkApp</h1>
-          </div>
-        </div>
+    <div className="mobile-shell">
+      <div className="status-bar">
+        <span>5:32</span>
+        <span>WorkFlowOS Field</span>
+        <span>54%</span>
+      </div>
 
-        <nav className="nav-stack" aria-label="Demo modules">
-          <button className="nav-item active" type="button">
-            <LayoutDashboard size={18} />
-            Command Center
-          </button>
-          {modules.map((module) => {
-            const Icon = moduleIcons[module.id];
-            return (
-              <button
-                key={module.id}
-                className={`nav-item ${activeModule === module.id ? 'active-soft' : ''}`}
-                type="button"
-                onClick={() => setActiveModule(module.id)}
-              >
-                <Icon size={18} />
-                {module.name}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="license-card">
-          <ShieldCheck size={19} />
-          <div>
-            <strong>Licensed workspace</strong>
-            <span>Customer data stays theirs. Platform stays reusable.</span>
-          </div>
-        </div>
-      </aside>
-
-      <main className="main-stage">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Demo for furniture, upholstery, repair, and restoration teams</p>
-            <h2>Four tools connected to one company workflow</h2>
-          </div>
-          <div className="topbar-actions">
-            <button type="button" className="ghost-button">
-              <UserCheck size={17} />
-              Owner
+      {selectedJob ? (
+        <>
+          <TopChrome
+            title={title}
+            onBack={() => {
+              setSelectedJob(null);
+              setTab('job');
+            }}
+            actionLabel="Enviar"
+            actionIcon={tab === 'photos' ? 'check' : 'edit'}
+            onAction={() => setNotesOpen(true)}
+          />
+          {tab === 'job' ? <JobDetail job={currentJob} onNotes={() => setNotesOpen(true)} /> : null}
+          {tab === 'photos' ? <PhotosView onNotes={() => setNotesOpen(true)} /> : null}
+          {tab === 'waiver' ? <WaiverView /> : null}
+          <BottomTabs active={tab} onChange={setTab} />
+        </>
+      ) : (
+        <>
+          <header className="phone-header home-header">
+            <button type="button" className="dark-action">
+              <Menu size={28} />
+              Menu
             </button>
-            <button type="button" className="solid-button">
-              <Send size={17} />
-              Send Test Ping
+            <strong>DSW</strong>
+            <button type="button" className="dark-action invisible">
+              <Home size={26} />
+              Home
             </button>
-          </div>
-        </header>
+          </header>
+          <JobSearch onOpenJob={setSelectedJob} />
+          <nav className="bottom-tabs" aria-label="Home sections">
+            <button type="button" className="active"><ClipboardList size={20} /> Trabajos</button>
+            <button type="button"><Home size={20} /> Mapa</button>
+            <button type="button"><CalendarDays size={20} /> Calendario</button>
+          </nav>
+        </>
+      )}
 
-        <section className="module-hero">
-          <div className="module-copy">
-            <div className="module-icon">
-              <ActiveIcon size={25} />
-            </div>
-            <p className="eyebrow">Active demo module</p>
-            <h3>{active.name}</h3>
-            <p>{active.description}</p>
-            <div className="feature-chips">
-              {active.features.map((feature) => (
-                <span key={feature}>{feature}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="phone-preview" aria-label="Employee mobile preview">
-            <div className="phone-top">
-              <span>9:41</span>
-              <span>Field View</span>
-            </div>
-            <div className="phone-card urgent">
-              <strong>DSV-1044</strong>
-              <span>Custom banquette build</span>
-              <small>Blocked: Webbing missing</small>
-            </div>
-            <div className="phone-actions">
-              <button type="button"><Camera size={16} /> Photo</button>
-              <button type="button"><PenLine size={16} /> Issue</button>
-              <button type="button"><FileSignature size={16} /> Sign</button>
-            </div>
-            <div className="phone-card">
-              <strong>Next action</strong>
-              <span>Notify owner and request approval</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="dashboard-grid">
-          <div className="panel jobs-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Jobs and milestones</p>
-                <h3>Live work board</h3>
-              </div>
-              <ClipboardList size={20} />
-            </div>
-
-            <div className="job-list">
-              {jobs.map((job) => (
-                <article key={job.id} className="job-row">
-                  <div>
-                    <div className="job-title-line">
-                      <strong>{job.id}</strong>
-                      <span className={statusClass[job.status]}>{job.status}</span>
-                    </div>
-                    <h4>{job.customer}</h4>
-                    <p>{job.type} | {job.crew}</p>
-                  </div>
-                  <div className="job-meta">
-                    <span>{job.milestone}</span>
-                    <small>{job.inventory}</small>
-                    <b>{job.due}</b>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Dox</p>
-                <h3>Digital forms</h3>
-              </div>
-              <FileSignature size={20} />
-            </div>
-            <div className="stack-list">
-              {forms.map((form) => (
-                <div key={form.name} className="mini-row">
-                  <FileSignature size={18} />
-                  <div>
-                    <strong>{form.name}</strong>
-                    <span>{form.owner}</span>
-                  </div>
-                  <em>{form.state}</em>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Ping</p>
-                <h3>Customer and owner alerts</h3>
-              </div>
-              <BellRing size={20} />
-            </div>
-            <div className="stack-list">
-              {pings.map((ping) => (
-                <div key={ping.event} className="mini-row">
-                  <MessageSquareText size={18} />
-                  <div>
-                    <strong>{ping.event}</strong>
-                    <span>{ping.target} | {ping.channel}</span>
-                  </div>
-                  <em>{ping.state}</em>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Log</p>
-                <h3>Activity feed</h3>
-              </div>
-              <ListChecks size={20} />
-            </div>
-            <div className="activity-feed">
-              {activity.map((item) => (
-                <div key={item} className="activity-item">
-                  <span />
-                  <p>{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="panel inventory-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Inventory</p>
-                <h3>Have, need, missing</h3>
-              </div>
-              <PackageCheck size={20} />
-            </div>
-            <div className="inventory-stats">
-              <div><strong>18 yd</strong><span>Charcoal vinyl</span></div>
-              <div><strong>1 roll</strong><span>Webbing left</span></div>
-              <div><strong>6 spools</strong><span>Black thread</span></div>
-            </div>
-          </div>
-
-          <div className="panel spanish-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">Employee mode</p>
-                <h3>Spanish-friendly actions</h3>
-              </div>
-              <Sparkles size={20} />
-            </div>
-            <div className="spanish-actions">
-              <button type="button"><ClipboardCheck size={17} /> Terminado</button>
-              <button type="button"><PackageCheck size={17} /> Falta material</button>
-              <button type="button"><BellRing size={17} /> Avisar gerente</button>
-            </div>
-          </div>
-        </section>
-      </main>
+      {notesOpen ? <NotesModal onClose={() => setNotesOpen(false)} /> : null}
     </div>
   );
 }
