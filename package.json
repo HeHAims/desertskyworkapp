@@ -9,12 +9,12 @@
     "preview": "vite preview --host 127.0.0.1 --port 4180"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "@vitejs/plugin-react": "^4.5.0",
-    "vite": "^6.3.6",
-    "typescript": "^5.0.0",
+    "lucide-react": "^0.538.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.538.0"
-  },
-  "devDependencies": {}
+    "typescript": "^5.0.0",
+    "vite": "^6.3.6"
+  }
 }

@@ -18,6 +18,8 @@ import {
   UserRound
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { supabaseConfigured, workspaceAccessCode } from './supabaseClient.js';
+import { uploadJobFile } from './uploads.js';
 
 const today = new Date();
 const tomorrow = new Date(today);
@@ -138,7 +140,7 @@ const featureGroups = [
   ['Ping', 'Appointment reminders, on-the-way texts, follow-ups, and branded customer communication.'],
   ['Log', 'Real-time job changes, issue alerts, owner visibility, and shop activity history.']
 ];
-const DEMO_ACCESS_CODE = 'DSW2026';
+const DEMO_ACCESS_CODE = workspaceAccessCode;
 
 function AppButton({ children, tone = 'dark', onClick }) {
   return (
@@ -199,6 +201,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState(initialJobs);
   const [inventory, setInventory] = useState(startingInventory);
+  const [jobFiles, setJobFiles] = useState([]);
   const [selectedId, setSelectedId] = useState(initialJobs[0].id);
   const [role, setRole] = useState('Technician');
   const [filter, setFilter] = useState('today');
@@ -208,6 +211,7 @@ export default function App() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [adjustingItem, setAdjustingItem] = useState(null);
   const [page, setPage] = useState('dashboard');
+  const [uploading, setUploading] = useState(false);
 
   const todayIso = isoDate(today);
   const selectedJob = useMemo(() => jobs.find((job) => job.id === selectedId) ?? jobs[0], [jobs, selectedId]);
@@ -279,8 +283,30 @@ export default function App() {
     setNotice(message);
   }
 
+  async function handleUpload(uploadType, fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) {
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        uploaded.push(await uploadJobFile({ job: selectedJob, file, uploadType, user }));
+      }
+      setJobFiles((current) => [...uploaded, ...current]);
+      setNotice(`${uploaded.length} ${uploadType.replace('-', ' ')} file${uploaded.length === 1 ? '' : 's'} saved for ${selectedJob.code}`);
+    } catch (error) {
+      setNotice(`Upload failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
   const approvalJobs = jobs.filter((job) => job.needsApproval);
+  const selectedJobFiles = jobFiles.filter((file) => file.jobId === selectedJob.id);
 
   if (!user) {
     return <LoginScreen onLogin={setUser} />;
@@ -407,14 +433,35 @@ export default function App() {
                 <span className="eyebrow">{selectedJob.code}</span>
                 <h2>Job Photos & Files</h2>
                 <div className="photo-workflow">
-                  <button type="button"><Camera size={24} /> Before photos</button>
-                  <button type="button"><Camera size={24} /> After photos</button>
-                  <button type="button"><FilePlus size={24} /> Measurements, drawings, and documents</button>
+                  <label>
+                    <Camera size={24} />
+                    Before photos
+                    <input type="file" accept="image/*" multiple onChange={(event) => handleUpload('before-photo', event.target.files)} />
+                  </label>
+                  <label>
+                    <Camera size={24} />
+                    After photos
+                    <input type="file" accept="image/*" multiple onChange={(event) => handleUpload('after-photo', event.target.files)} />
+                  </label>
+                  <label>
+                    <FilePlus size={24} />
+                    Measurements, drawings, and documents
+                    <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" multiple onChange={(event) => handleUpload('document', event.target.files)} />
+                  </label>
                 </div>
+                {uploading ? <p className="upload-status">Uploading files...</p> : null}
                 <div className="photo-box large">
                   <Camera size={48} />
                   <strong>Uploaded photos will appear here</strong>
-                  <span>For demo: this represents the job photo capture screen.</span>
+                  <span>{supabaseConfigured ? 'Files save to Supabase Storage.' : 'Demo mode: files preview locally until Supabase keys are added.'}</span>
+                </div>
+                <div className="uploaded-list">
+                  {selectedJobFiles.length ? selectedJobFiles.map((file) => (
+                    <a key={file.id} href={file.publicUrl} target="_blank" rel="noreferrer">
+                      <strong>{file.name}</strong>
+                      <span>{file.type} - {file.mode}</span>
+                    </a>
+                  )) : <span>No files uploaded for this job yet.</span>}
                 </div>
               </div>
             ) : null}
@@ -614,9 +661,16 @@ export default function App() {
             {tab === 'photos' ? (
               <div className="photos-view">
                 <h3>Before & After Photos</h3>
-                <button type="button" className="file-row"><Camera size={22} /> Add before photo</button>
-                <button type="button" className="file-row"><Camera size={22} /> Add after photo</button>
-                <button type="button" className="file-row"><FilePlus size={22} /> Upload special instructions / drawings</button>
+                <label className="file-row"><Camera size={22} /> Add before photo<input type="file" accept="image/*" onChange={(event) => handleUpload('before-photo', event.target.files)} /></label>
+                <label className="file-row"><Camera size={22} /> Add after photo<input type="file" accept="image/*" onChange={(event) => handleUpload('after-photo', event.target.files)} /></label>
+                <label className="file-row"><FilePlus size={22} /> Upload special instructions / drawings<input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={(event) => handleUpload('document', event.target.files)} /></label>
+                {selectedJobFiles.length ? (
+                  <div className="uploaded-list compact">
+                    {selectedJobFiles.slice(0, 3).map((file) => (
+                      <a key={file.id} href={file.publicUrl} target="_blank" rel="noreferrer">{file.name}</a>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

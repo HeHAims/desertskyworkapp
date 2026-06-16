@@ -416,6 +416,7 @@ button {
   margin-bottom: 16px;
 }
 
+.photo-workflow label,
 .photo-workflow button,
 .contact-actions button {
   display: flex;
@@ -429,11 +430,50 @@ button {
   color: #243040;
   padding: 12px;
   font-weight: 900;
+  cursor: pointer;
+}
+
+.photo-workflow input,
+.file-row input {
+  display: none;
 }
 
 .photo-box.large,
 .signature-area.large {
   min-height: 390px;
+}
+
+.upload-status {
+  margin: 0 0 14px;
+  color: #15364a;
+  font-weight: 900;
+}
+
+.uploaded-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.uploaded-list a,
+.uploaded-list > span {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.uploaded-list span {
+  color: #64707d;
+  font-size: 13px;
+}
+
+.uploaded-list.compact {
+  margin-top: 0;
 }
 
 .map-preview {
@@ -783,6 +823,7 @@ button {
   text-align: left;
   font-size: 18px;
   font-weight: 900;
+  cursor: pointer;
 }
 
 .photo-box,
