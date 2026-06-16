@@ -224,6 +224,8 @@ export default function App() {
               ? job.needsApproval
               : filter === 'future'
                 ? job.date > todayIso
+                : filter === 'past'
+                  ? job.date < todayIso || job.status === 'Completed'
                 : true;
 
       const matchesSearch =
@@ -310,20 +312,20 @@ export default function App() {
           }}>
             <ClipboardList size={19} /> Trabajo Hoy
           </button>
-          <button className={filter === 'active' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
-            setFilter('active');
-            setPage('dashboard');
-          }}>
-            <CalendarDays size={19} /> All Active
-          </button>
-          <button className={page === 'alerts' ? 'active' : ''} type="button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}>
-            <BellRing size={19} /> Needs Approval
-          </button>
           <button className={filter === 'future' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
             setFilter('future');
             setPage('dashboard');
           }}>
-            <CalendarDays size={19} /> Future Jobs
+            <CalendarDays size={19} /> Trabajos Futuros
+          </button>
+          <button className={filter === 'past' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
+            setFilter('past');
+            setPage('dashboard');
+          }}>
+            <CalendarDays size={19} /> Trabajos Pasados
+          </button>
+          <button className={page === 'alerts' ? 'active' : ''} type="button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}>
+            <BellRing size={19} /> Needs Approval
           </button>
         </nav>
 
@@ -505,7 +507,17 @@ export default function App() {
           <div className="panel job-search-panel">
             <div className="panel-heading">
               <span className="eyebrow">{filter === 'today' ? displayDate(today) : 'Filtered jobs'}</span>
-              <h2>{filter === 'today' ? 'Trabajo Hoy' : filter === 'approval' ? 'Needs Approval' : 'Job List'}</h2>
+              <h2>
+                {filter === 'today'
+                  ? 'Trabajo Hoy'
+                  : filter === 'future'
+                    ? 'Trabajos Futuros'
+                    : filter === 'past'
+                      ? 'Trabajos Pasados'
+                      : filter === 'approval'
+                        ? 'Needs Approval'
+                        : 'Job List'}
+              </h2>
             </div>
 
             <label className="search-field">
@@ -514,8 +526,9 @@ export default function App() {
             </label>
 
             <div className="filter-row">
-              <button className={filter === 'today' ? 'active' : ''} type="button" onClick={() => setFilter('today')}>Today</button>
-              <button className={filter === 'active' ? 'active' : ''} type="button" onClick={() => setFilter('active')}>All Active</button>
+              <button className={filter === 'today' ? 'active' : ''} type="button" onClick={() => setFilter('today')}>Hoy</button>
+              <button className={filter === 'future' ? 'active' : ''} type="button" onClick={() => setFilter('future')}>Futuros</button>
+              <button className={filter === 'past' ? 'active' : ''} type="button" onClick={() => setFilter('past')}>Pasados</button>
               <button className={filter === 'approval' ? 'active' : ''} type="button" onClick={() => setFilter('approval')}>Needs Approval</button>
             </div>
 
