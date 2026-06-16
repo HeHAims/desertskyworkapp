@@ -404,6 +404,63 @@ button {
   margin-top: 18px;
 }
 
+.work-report-form {
+  display: grid;
+  gap: 16px;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.work-report-form label {
+  display: grid;
+  gap: 8px;
+  color: #333;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.work-report-form input,
+.work-report-form textarea {
+  width: 100%;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  padding: 12px 14px;
+  font-weight: 400;
+}
+
+.work-report-form input {
+  min-height: 52px;
+}
+
+.work-report-form textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.report-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #c7e5ef;
+  border-left: 8px solid #addbeb;
+  border-radius: 8px;
+  background: #f7fcff;
+  padding: 12px 14px;
+  color: #15364a;
+}
+
+.report-summary span {
+  font-weight: 900;
+}
+
 .photo-workflow,
 .contact-actions,
 .subpage-list {
@@ -1129,7 +1186,8 @@ button {
   }
 
   .subpage-form,
-  .photo-workflow {
+  .photo-workflow,
+  .time-grid {
     grid-template-columns: 1fr;
   }
 

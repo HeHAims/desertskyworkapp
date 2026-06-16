@@ -142,6 +142,24 @@ const featureGroups = [
 ];
 const DEMO_ACCESS_CODE = workspaceAccessCode;
 
+const nowLocalInput = () => {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+
+const calculateHours = (startedAt, finishedAt) => {
+  if (!startedAt || !finishedAt) {
+    return 'TBD';
+  }
+  const diffMs = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
+  if (!Number.isFinite(diffMs) || diffMs <= 0) {
+    return 'TBD';
+  }
+  const hours = diffMs / 36e5;
+  return `${hours.toFixed(hours >= 10 ? 0 : 1)} hrs`;
+};
+
 function AppButton({ children, tone = 'dark', onClick }) {
   return (
     <button type="button" className={`app-button ${tone}`} onClick={onClick}>
@@ -202,6 +220,7 @@ export default function App() {
   const [jobs, setJobs] = useState(initialJobs);
   const [inventory, setInventory] = useState(startingInventory);
   const [jobFiles, setJobFiles] = useState([]);
+  const [workReports, setWorkReports] = useState({});
   const [selectedId, setSelectedId] = useState(initialJobs[0].id);
   const [role, setRole] = useState('Technician');
   const [filter, setFilter] = useState('today');
@@ -258,6 +277,25 @@ export default function App() {
     setNotice(`${selectedJob.code}: ${alert}`);
   }
 
+  function startJob(job) {
+    const arrivalTime = nowLocalInput();
+    setSelectedId(job.id);
+    setWorkReports((current) => ({
+      ...current,
+      [job.id]: {
+        ...current[job.id],
+        arrivedAt: current[job.id]?.arrivedAt || arrivalTime
+      }
+    }));
+    setJobs((current) =>
+      current.map((item) =>
+        item.id === job.id ? { ...item, status: 'In progress', alert: 'Technician arrived on site' } : item
+      )
+    );
+    setPage('worklog');
+    setNotice(`${job.code}: arrival time started`);
+  }
+
   function completeJob() {
     setJobs((current) =>
       current.map((job) =>
@@ -268,6 +306,47 @@ export default function App() {
     );
     setFilter('today');
     setNotice(`${selectedJob.code} completed and removed from Trabajo Hoy`);
+  }
+
+  function saveWorkReport(formData, completeAfterSave = false) {
+    const arrivedAt = formData.get('arrivedAt');
+    const finishedAt = formData.get('finishedAt');
+    const workDone = formData.get('workDone');
+    const issueNotes = formData.get('issueNotes');
+    const totalTime = calculateHours(arrivedAt, finishedAt);
+
+    setWorkReports((current) => ({
+      ...current,
+      [selectedJob.id]: {
+        arrivedAt,
+        finishedAt,
+        workDone,
+        issueNotes,
+        totalTime,
+        savedBy: user.email,
+        savedAt: new Date().toISOString()
+      }
+    }));
+
+    setJobs((current) =>
+      current.map((job) =>
+        job.id === selectedJob.id
+          ? {
+              ...job,
+              duration: totalTime,
+              alert: completeAfterSave ? 'Work report completed' : 'Work report saved',
+              status: completeAfterSave ? 'Completed' : job.status
+            }
+          : job
+      )
+    );
+
+    if (completeAfterSave) {
+      setFilter('today');
+      setNotice(`${selectedJob.code}: work report saved and job completed`);
+    } else {
+      setNotice(`${selectedJob.code}: work report saved`);
+    }
   }
 
   function saveInventory(amount) {
@@ -307,6 +386,7 @@ export default function App() {
   const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
   const approvalJobs = jobs.filter((job) => job.needsApproval);
   const selectedJobFiles = jobFiles.filter((file) => file.jobId === selectedJob.id);
+  const selectedReport = workReports[selectedJob.id] || {};
 
   if (!user) {
     return <LoginScreen onLogin={setUser} />;
@@ -421,10 +501,84 @@ export default function App() {
                   </div>
                   <div className="subpage-actions">
                     <AppButton tone="blue" onClick={() => openToolPage('photos', 'Photos page opened')}><Camera size={18} /> Photos</AppButton>
+                    <AppButton tone="blue" onClick={() => openToolPage('worklog', 'Work report opened')}><PenLine size={18} /> Work Report</AppButton>
                     <AppButton tone="blue" onClick={() => openToolPage('sign', 'Sign-off page opened')}><FilePlus size={18} /> Sign-Off</AppButton>
                     <AppButton tone="green" onClick={completeJob}><Check size={18} /> Complete Job</AppButton>
                   </div>
                 </div>
+              </div>
+            ) : null}
+
+            {page === 'worklog' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">{selectedJob.code}</span>
+                <h2>Technician Work Report</h2>
+                <p className="subpage-copy">Record arrival time, finish time, what was completed, issues, materials, and related photos/files.</p>
+                <form className="work-report-form" onSubmit={(event) => {
+                  event.preventDefault();
+                  saveWorkReport(new FormData(event.currentTarget));
+                }}>
+                  <div className="time-grid">
+                    <label>
+                      Arrived on site
+                      <input name="arrivedAt" type="datetime-local" defaultValue={selectedReport.arrivedAt || nowLocalInput()} />
+                    </label>
+                    <label>
+                      Finished work
+                      <input name="finishedAt" type="datetime-local" defaultValue={selectedReport.finishedAt || ''} />
+                    </label>
+                  </div>
+                  <label>
+                    Description of work completed
+                    <textarea name="workDone" defaultValue={selectedReport.workDone || ''} placeholder="Example: repaired frame, installed booth upholstery, cleaned work area, customer reviewed final work." />
+                  </label>
+                  <label>
+                    Issues, missing materials, or follow-up needed
+                    <textarea name="issueNotes" defaultValue={selectedReport.issueNotes || ''} placeholder="Example: webbing was low, customer requested another chair quote, owner approval needed." />
+                  </label>
+
+                  <div className="photo-workflow">
+                    <label>
+                      <Camera size={24} />
+                      Before photos
+                      <input type="file" accept="image/*" multiple onChange={(event) => handleUpload('before-photo', event.target.files)} />
+                    </label>
+                    <label>
+                      <Camera size={24} />
+                      After photos
+                      <input type="file" accept="image/*" multiple onChange={(event) => handleUpload('after-photo', event.target.files)} />
+                    </label>
+                    <label>
+                      <FilePlus size={24} />
+                      Documents
+                      <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" multiple onChange={(event) => handleUpload('document', event.target.files)} />
+                    </label>
+                  </div>
+
+                  <div className="report-summary">
+                    <strong>Total time:</strong>
+                    <span>{selectedReport.totalTime || 'Calculated after save'}</span>
+                  </div>
+
+                  {selectedJobFiles.length ? (
+                    <div className="uploaded-list compact">
+                      {selectedJobFiles.map((file) => (
+                        <a key={file.id} href={file.publicUrl} target="_blank" rel="noreferrer">
+                          <strong>{file.name}</strong>
+                          <span>{file.type} - {file.mode}</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="subpage-actions">
+                    <button type="submit" className="app-button blue">Save Report</button>
+                    <button type="button" className="app-button green" onClick={(event) => {
+                      const form = event.currentTarget.closest('form');
+                      saveWorkReport(new FormData(form), true);
+                    }}>Save & Complete Job</button>
+                  </div>
+                </form>
               </div>
             ) : null}
 
@@ -594,8 +748,7 @@ export default function App() {
                   </div>
                   <div className="card-actions">
                     <button type="button" onClick={() => {
-                      openJob(job);
-                      updateJobStatus('In progress', 'Status changed to In Progress');
+                      startJob(job);
                     }}>Start Job</button>
                     <button type="button" onClick={() => {
                       setSelectedId(job.id);
@@ -647,6 +800,9 @@ export default function App() {
                   ['Time Window', selectedJob.timeWindow],
                   ['Job Type', selectedJob.type],
                   ['Duration', selectedJob.duration],
+                  ['Arrived', selectedReport.arrivedAt ? selectedReport.arrivedAt.replace('T', ' ') : 'Not recorded'],
+                  ['Finished', selectedReport.finishedAt ? selectedReport.finishedAt.replace('T', ' ') : 'Not recorded'],
+                  ['Total Time', selectedReport.totalTime || 'TBD'],
                   ['Material', selectedJob.material],
                   ['Special Instructions', selectedJob.instructions]
                 ].map(([label, value]) => (
@@ -691,6 +847,7 @@ export default function App() {
               <AppButton tone="blue" onClick={() => setNotice(`Alert sent: Customer notified crew is on the way`)}>
                 <MessageSquareText size={18} /> On-The-Way Text
               </AppButton>
+              <AppButton tone="blue" onClick={() => openToolPage('worklog', 'Work report opened')}><PenLine size={18} /> Work Report</AppButton>
               <AppButton tone="green" onClick={completeJob}><Check size={18} /> Complete Job</AppButton>
               <AppButton onClick={() => setNotesOpen(true)}><PenLine size={18} /> Notes</AppButton>
             </div>
