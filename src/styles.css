@@ -28,6 +28,83 @@ button {
   cursor: pointer;
 }
 
+.login-screen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(50, 143, 208, 0.12), transparent 36%),
+    #e7edf3;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(480px, 100%);
+  border: 1px solid #dce2e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(20, 31, 45, 0.14);
+  padding: 28px;
+}
+
+.login-brand {
+  margin-bottom: 28px;
+}
+
+.login-brand span,
+.login-brand strong {
+  color: #111827;
+}
+
+.login-card h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.login-card p {
+  margin: 10px 0 22px;
+  color: #5d6670;
+  line-height: 1.45;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 7px;
+  color: #333;
+  font-weight: 900;
+}
+
+.login-form input {
+  min-height: 52px;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #111827;
+}
+
+.login-form button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 8px;
+  background: #328fd0;
+  color: #fff;
+  font-weight: 900;
+}
+
+.login-error {
+  border-radius: 8px;
+  background: #ffe2e2;
+  color: #b91c1c;
+  padding: 10px 12px;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: 282px minmax(0, 1fr);
@@ -120,6 +197,36 @@ button {
   line-height: 1.45;
 }
 
+.signed-in-card {
+  display: flex;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5df;
+  padding: 12px;
+}
+
+.signed-in-card span,
+.signed-in-card strong {
+  display: block;
+}
+
+.signed-in-card span {
+  color: #9fb0be;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.signed-in-card strong {
+  margin-top: 4px;
+  color: #fff;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .main {
   min-width: 0;
   padding: 28px;
@@ -177,6 +284,16 @@ button {
 .role-switch button.active {
   background: #328fd0;
   color: #fff;
+}
+
+.logout-button {
+  min-height: 44px;
+  border: 1px solid #d6dce2;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  padding: 0 14px;
+  font-weight: 900;
 }
 
 .top-actions select {

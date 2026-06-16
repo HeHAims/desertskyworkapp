@@ -138,6 +138,7 @@ const featureGroups = [
   ['Ping', 'Appointment reminders, on-the-way texts, follow-ups, and branded customer communication.'],
   ['Log', 'Real-time job changes, issue alerts, owner visibility, and shop activity history.']
 ];
+const DEMO_ACCESS_CODE = 'DSW2026';
 
 function AppButton({ children, tone = 'dark', onClick }) {
   return (
@@ -147,7 +148,55 @@ function AppButton({ children, tone = 'dark', onClick }) {
   );
 }
 
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [error, setError] = useState('');
+
+  function submitLogin(event) {
+    event.preventDefault();
+    if (!email.includes('@')) {
+      setError('Enter a valid employee email.');
+      return;
+    }
+    if (accessCode.trim().toUpperCase() !== DEMO_ACCESS_CODE) {
+      setError('Company access code is incorrect.');
+      return;
+    }
+    onLogin({ email, name: email.split('@')[0] });
+  }
+
+  return (
+    <main className="login-screen">
+      <section className="login-card">
+        <div className="brand login-brand">
+          <div className="brand-mark">DS</div>
+          <div>
+            <span>Employee access</span>
+            <strong>Desert Sky WorkApp</strong>
+          </div>
+        </div>
+        <h1>Sign in to the company workspace</h1>
+        <p>Employees use their email plus the company access code provided by management.</p>
+        <form onSubmit={submitLogin} className="login-form">
+          <label>
+            Employee email
+            <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="employee@desertsky.com" />
+          </label>
+          <label>
+            Company access code
+            <input value={accessCode} onChange={(event) => setAccessCode(event.target.value)} placeholder="Demo code: DSW2026" />
+          </label>
+          {error ? <strong className="login-error">{error}</strong> : null}
+          <button type="submit">Open WorkApp</button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
 export default function App() {
+  const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState(initialJobs);
   const [inventory, setInventory] = useState(startingInventory);
   const [selectedId, setSelectedId] = useState(initialJobs[0].id);
@@ -231,6 +280,10 @@ export default function App() {
   const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
   const approvalJobs = jobs.filter((job) => job.needsApproval);
 
+  if (!user) {
+    return <LoginScreen onLogin={setUser} />;
+  }
+
   return (
     <div className="workspace">
       <aside className="side-panel">
@@ -239,6 +292,14 @@ export default function App() {
           <div>
             <span>WorkflowOS demo</span>
             <strong>Desert Sky WorkApp</strong>
+          </div>
+        </div>
+
+        <div className="signed-in-card">
+          <UserRound size={18} />
+          <div>
+            <span>Signed in</span>
+            <strong>{user.email}</strong>
           </div>
         </div>
 
@@ -286,6 +347,9 @@ export default function App() {
               </button>
             ))}
           </div>
+          <button type="button" className="logout-button" onClick={() => setUser(null)}>
+            Sign out
+          </button>
         </header>
 
         <section className="notice-bar">
