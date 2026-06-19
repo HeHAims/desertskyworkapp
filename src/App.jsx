@@ -141,6 +141,7 @@ const featureGroups = [
   ['Log', 'Real-time job changes, issue alerts, owner visibility, and shop activity history.']
 ];
 const DEMO_ACCESS_CODE = workspaceAccessCode;
+const jobStatusOptions = ['Open', 'Closed', 'Pending', 'Stock'];
 
 const nowLocalInput = () => {
   const now = new Date();
@@ -240,15 +241,17 @@ export default function App() {
     return jobs.filter((job) => {
       const matchesFilter =
         filter === 'today'
-          ? job.date === todayIso && job.status !== 'Completed'
+          ? job.date === todayIso && !['Completed', 'Closed'].includes(job.status)
           : filter === 'active'
-            ? job.status !== 'Completed'
+            ? !['Completed', 'Closed'].includes(job.status)
             : filter === 'approval'
               ? job.needsApproval
               : filter === 'future'
                 ? job.date > todayIso
                 : filter === 'past'
-                  ? job.date < todayIso || job.status === 'Completed'
+                  ? job.date < todayIso || ['Completed', 'Closed'].includes(job.status)
+                  : filter === 'new'
+                    ? job.isNew
                 : true;
 
       const matchesSearch =
@@ -362,6 +365,34 @@ export default function App() {
     setNotice(message);
   }
 
+  function createJob(formData) {
+    const status = formData.get('status');
+    const newJob = {
+      id: `DSV-${Math.floor(1100 + Math.random() * 8999)}`,
+      code: formData.get('code') || `NEW-${Date.now().toString().slice(-5)}`,
+      number: formData.get('number') || Date.now().toString().slice(-6),
+      account: formData.get('account') || 'New customer',
+      type: formData.get('type') || 'Service',
+      date: isoDate(today),
+      timeWindow: formData.get('timeWindow') || 'TBD',
+      duration: 'TBD',
+      salesperson: user.name,
+      customer: formData.get('customer') || 'New job',
+      address: formData.get('address') || 'Address needed',
+      status,
+      material: formData.get('material') || 'TBD',
+      instructions: formData.get('instructions') || 'No instructions added yet.',
+      alert: status === 'Stock' ? 'Waiting on stock/material' : status === 'Pending' ? 'Pending review' : 'New job created',
+      needsApproval: status === 'Pending',
+      isNew: true
+    };
+    setJobs((current) => [newJob, ...current]);
+    setSelectedId(newJob.id);
+    setFilter(status === 'Closed' ? 'past' : 'today');
+    setPage('job');
+    setNotice(`${newJob.code} created with status ${status}`);
+  }
+
   async function handleUpload(uploadType, fileList) {
     const files = Array.from(fileList || []);
     if (!files.length) {
@@ -383,10 +414,16 @@ export default function App() {
     }
   }
 
-  const todayJobs = jobs.filter((job) => job.date === todayIso && job.status !== 'Completed');
+  const todayJobs = jobs.filter((job) => job.date === todayIso && !['Completed', 'Closed'].includes(job.status));
   const approvalJobs = jobs.filter((job) => job.needsApproval);
   const selectedJobFiles = jobFiles.filter((file) => file.jobId === selectedJob.id);
   const selectedReport = workReports[selectedJob.id] || {};
+  const newJobs = jobs.filter((job) => job.isNew);
+  const reportFiles = Object.entries(workReports).map(([jobId, report]) => ({
+    jobId,
+    report,
+    job: jobs.find((item) => item.id === jobId)
+  })).filter((item) => item.job);
 
   if (!user) {
     return <LoginScreen onLogin={setUser} />;
@@ -429,6 +466,18 @@ export default function App() {
             setPage('dashboard');
           }}>
             <CalendarDays size={19} /> Trabajos Pasados
+          </button>
+          <button className={page === 'newjob' ? 'active' : ''} type="button" onClick={() => openToolPage('newjob', 'Create a new job')}>
+            <FilePlus size={19} /> Nuevo Trabajo
+          </button>
+          <button className={filter === 'new' && page === 'dashboard' ? 'active' : ''} type="button" onClick={() => {
+            setFilter('new');
+            setPage('dashboard');
+          }}>
+            <ClipboardList size={19} /> Nuevos Trabajos
+          </button>
+          <button className={page === 'workfiles' ? 'active' : ''} type="button" onClick={() => openToolPage('workfiles', 'Work files opened')}>
+            <FilePlus size={19} /> Work Files
           </button>
           <button className={page === 'alerts' ? 'active' : ''} type="button" onClick={() => openToolPage('alerts', 'Owner alerts opened')}>
             <BellRing size={19} /> Needs Approval
@@ -582,6 +631,72 @@ export default function App() {
               </div>
             ) : null}
 
+            {page === 'newjob' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">Create and schedule</span>
+                <h2>Nuevo Trabajo</h2>
+                <p className="subpage-copy">Create a job for today and choose the starting status. Closed jobs move to Trabajos Pasados automatically.</p>
+                <form className="work-report-form" onSubmit={(event) => {
+                  event.preventDefault();
+                  createJob(new FormData(event.currentTarget));
+                }}>
+                  <div className="time-grid">
+                    <label>
+                      Job name / code
+                      <input name="code" placeholder="09510 / 2200-1" />
+                    </label>
+                    <label>
+                      Job number
+                      <input name="number" placeholder="126990" />
+                    </label>
+                  </div>
+                  <div className="time-grid">
+                    <label>
+                      Customer / job name
+                      <input name="customer" placeholder="Custom sofa repair" />
+                    </label>
+                    <label>
+                      Account / location
+                      <input name="account" placeholder="AMW - WESLEY PARK" />
+                    </label>
+                  </div>
+                  <label>
+                    Address
+                    <input name="address" placeholder="3770 S Valley View Blvd, Las Vegas, NV" />
+                  </label>
+                  <div className="time-grid">
+                    <label>
+                      Time window
+                      <input name="timeWindow" placeholder="10:00 AM - 12:00 PM" />
+                    </label>
+                    <label>
+                      Type
+                      <input name="type" placeholder="Install, repair, custom furniture" />
+                    </label>
+                  </div>
+                  <div className="time-grid">
+                    <label>
+                      Status
+                      <select name="status" defaultValue="Open">
+                        {jobStatusOptions.map((status) => <option key={status}>{status}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      Material / stock
+                      <input name="material" placeholder="Webbing, fabric, thread..." />
+                    </label>
+                  </div>
+                  <label>
+                    Instructions / description
+                    <textarea name="instructions" placeholder="Describe what needs to be done, customer requests, special notes, measurements, or stock issue." />
+                  </label>
+                  <div className="subpage-actions">
+                    <button type="submit" className="app-button green">Save New Job</button>
+                  </div>
+                </form>
+              </div>
+            ) : null}
+
             {page === 'photos' ? (
               <div className="panel subpage-panel">
                 <span className="eyebrow">{selectedJob.code}</span>
@@ -702,6 +817,32 @@ export default function App() {
                 </div>
               </div>
             ) : null}
+
+            {page === 'workfiles' ? (
+              <div className="panel subpage-panel">
+                <span className="eyebrow">Photos, documents, and reports</span>
+                <h2>Work Files</h2>
+                <div className="uploaded-list">
+                  {jobFiles.length ? jobFiles.map((file) => (
+                    <a key={file.id} href={file.publicUrl} target="_blank" rel="noreferrer">
+                      <strong>{file.name}</strong>
+                      <span>{file.jobCode} - {file.type} - {file.uploadedBy}</span>
+                    </a>
+                  )) : <span>No uploaded job files yet.</span>}
+                </div>
+                <div className="subpage-list work-file-reports">
+                  {reportFiles.length ? reportFiles.map(({ job, report }) => (
+                    <button key={job.id} type="button" className="alert-row" onClick={() => openJob(job)}>
+                      <PenLine size={18} />
+                      <div>
+                        <strong>{job.code} work report</strong>
+                        <span>{report.totalTime || 'TBD'} - {report.workDone || 'No description saved'}</span>
+                      </div>
+                    </button>
+                  )) : <span>No saved work reports yet.</span>}
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : (
         <section className="app-grid">
@@ -715,6 +856,8 @@ export default function App() {
                     ? 'Trabajos Futuros'
                     : filter === 'past'
                       ? 'Trabajos Pasados'
+                      : filter === 'new'
+                        ? 'Nuevos Trabajos'
                       : filter === 'approval'
                         ? 'Needs Approval'
                         : 'Job List'}

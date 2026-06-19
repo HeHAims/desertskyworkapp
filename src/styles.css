@@ -424,6 +424,7 @@ button {
 }
 
 .work-report-form input,
+.work-report-form select,
 .work-report-form textarea {
   width: 100%;
   border: 1px solid #d9dee5;
@@ -434,7 +435,8 @@ button {
   font-weight: 400;
 }
 
-.work-report-form input {
+.work-report-form input,
+.work-report-form select {
   min-height: 52px;
 }
 
@@ -531,6 +533,10 @@ button {
 
 .uploaded-list.compact {
   margin-top: 0;
+}
+
+.work-file-reports {
+  margin-top: 18px;
 }
 
 .map-preview {
@@ -795,6 +801,26 @@ button {
 .status.in-progress {
   background: #d8f7e7;
   color: #047857;
+}
+
+.status.open {
+  background: #e7f8ff;
+  color: #0369a1;
+}
+
+.status.closed {
+  background: #e8eef3;
+  color: #334155;
+}
+
+.status.pending {
+  background: #fff3d7;
+  color: #92400e;
+}
+
+.status.stock {
+  background: #ffe2e2;
+  color: #b91c1c;
 }
 
 .tabs,
